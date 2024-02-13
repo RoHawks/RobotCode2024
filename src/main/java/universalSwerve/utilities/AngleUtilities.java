@@ -38,6 +38,14 @@ public class AngleUtilities
         return Normalize(pAngle + 180.0);      
     }
     
+	/*
+	 * Converts degrees clockwise to degrees counter clockwise.  So e.g., moves 10 to 350 and vice vera 
+	 */
+	public static double ChangeClockWiseiness(double pAngle)
+	{
+		return Normalize(360.0 - pAngle);
+	}
+
     public static double ConvertSwerveKinematicsAnglesToOurAngles(double pSwerveKinematicsAngle)
 	{
 		//For SwerveKinematics, 0 means straight ahead

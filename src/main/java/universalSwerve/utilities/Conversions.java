@@ -50,6 +50,12 @@ public class Conversions
         return falconUnits;
     }
 
+    public static double RPMsToTalonFXVelocityUnit(double pRPMS)
+    {
+        //the Phoenix 6 TalonFX uses rotations (at motor) per second
+        return pRPMS / 60.0;
+    }
+
     public static double FalconVelocityUnitToRPMS(double pFalconVelocityUnit)
     {
         //Falcon velocity unit is "position change per 100ms" for some stupid reason
@@ -59,5 +65,20 @@ public class Conversions
         double rotatitionsPer100ms = pFalconVelocityUnit / positionsPerRotation;
         double rpms = rotatitionsPer100ms * 60.0 * 10.0;
         return rpms;
+    }
+
+    public static double CTREMagneticAbsoluteEncoderToDegrees(double pSensorReading, double pSensorReadingAtStraightAhead)
+    {
+        double ticksPerRotation = 4096.0;
+        double ticksPastStraightAhead = pSensorReading - pSensorReadingAtStraightAhead;
+        double degreesPastStraightAhead = ticksPastStraightAhead / ticksPerRotation * 360.0;
+        return AngleUtilities.Normalize(degreesPastStraightAhead);
+
+    }
+
+    public static double TalonFXVelocityUnitToRPMS(double pTalonFXVelocityUnit)
+    {
+        //Talon FX velocity unit is rotations per second
+        return pTalonFXVelocityUnit * 60.0;
     }
 }

@@ -1,21 +1,27 @@
 package universalSwerve.hardware.implementations;
 
-import edu.wpi.first.wpilibj.ADIS16470_IMU;
-import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
+import com.kauailabs.navx.frc.AHRS;
+
 import universalSwerve.hardware.IGyroscope;
 
-public class ADIS16470Gyro implements IGyroscope{
-
-
-    private ADIS16470_IMU mADIS16470;
+public class NavX implements IGyroscope 
+{
+    private AHRS mNavX;
     private boolean mIsFlipped;
     private double mOffset = 0;
-    private IMUAxis mYawAxis; 
+    private Axis mAxis;
 
-    public ADIS16470Gyro(IMUAxis pAxis, boolean pIsFlipped)
+    public enum Axis
     {
-        mADIS16470 = new ADIS16470_IMU();
-        mYawAxis = pAxis;
+        Yaw,
+        Pitch,
+        Roll
+    }
+
+    public NavX(boolean pIsFlipped, Axis pAxis)
+    {
+        mNavX = new AHRS();
+        mAxis = pAxis;
         mIsFlipped = pIsFlipped;
     }
 
@@ -28,8 +34,20 @@ public class ADIS16470Gyro implements IGyroscope{
 
     private double GetRawGyroAngle()
 	{
-		return mADIS16470.getAngle(mYawAxis);
+        switch (mAxis)
+        {
+            case Yaw:
+                return mNavX.getYaw();
+            case Pitch:
+                return mNavX.getPitch();
+            case Roll:
+                return mNavX.getRoll();
+            default:
+                throw new RuntimeException("Unknown Axis for NavX");
+        }
 	}
+
+    
 
     private double GetGyroInOurCoordinateSystem()
 	{
@@ -44,5 +62,6 @@ public class ADIS16470Gyro implements IGyroscope{
     public double GetCurrentAngle() {
         return GetGyroInOurCoordinateSystem();
     }
+    
     
 }

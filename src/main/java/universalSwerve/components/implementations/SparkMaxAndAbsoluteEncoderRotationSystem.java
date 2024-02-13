@@ -59,9 +59,9 @@ public abstract class SparkMaxAndAbsoluteEncoderRotationSystem implements IRotat
 
     @Override
     public void SetAngle(double pTargetAngle) {
-		SmartDashboard.putNumber("WheelTargetAngle", pTargetAngle);
+		//SmartDashboard.putNumber("WheelTargetAngle", pTargetAngle);
 		double motorTargetPosition = CalculateEncoderTargetForWheelTarget(pTargetAngle);
-		SmartDashboard.putNumber("MotorTargetPosition", motorTargetPosition);
+		//SmartDashboard.putNumber("MotorTargetPosition", motorTargetPosition);
         mSparkMax.getPIDController().setReference(motorTargetPosition, CANSparkMax.ControlType.kPosition);
         
     }
@@ -72,6 +72,7 @@ public abstract class SparkMaxAndAbsoluteEncoderRotationSystem implements IRotat
 	*/
 	private double  GetTurnMotorRotationsSinceStartUp()
 	{
+		//SmartDashboard.putNumber("GetTurnMotorRotationsSinceStartUp", mSparkMax.getEncoder().getPosition());
 		return mSparkMax.getEncoder().getPosition();
 	}
 
@@ -103,8 +104,8 @@ public abstract class SparkMaxAndAbsoluteEncoderRotationSystem implements IRotat
 	*/
     private double CalculateEncoderTargetForWheelTarget(double pTargetAngle)
 	{
-		SmartDashboard.putNumber("GetWheelCurrentAngleFromNeoPlusAbsoluteEncoder", GetWheelCurrentAngleFromNeoPlusAbsoluteEncoder());
-		SmartDashboard.putNumber("GetTurnMotorRotationsSinceStartUp", GetTurnMotorRotationsSinceStartUp());
+		//SmartDashboard.putNumber("GetWheelCurrentAngleFromNeoPlusAbsoluteEncoder", GetWheelCurrentAngleFromNeoPlusAbsoluteEncoder());
+		//SmartDashboard.putNumber("GetTurnMotorRotationsSinceStartUp", GetTurnMotorRotationsSinceStartUp());
 
         return  CalculateWheelTargetEncoderPositionNeo(pTargetAngle, GetWheelCurrentAngleFromNeoPlusAbsoluteEncoder(), GetTurnMotorRotationsSinceStartUp());
     }
@@ -131,14 +132,14 @@ public abstract class SparkMaxAndAbsoluteEncoderRotationSystem implements IRotat
 		{
 			amountToMoveWheelToGetToDesiredAngleDegrees += 360.0;
 		}
-		SmartDashboard.putNumber("amountToMoveWheelToGetToDesiredAngleDegrees", amountToMoveWheelToGetToDesiredAngleDegrees);
+		//SmartDashboard.putNumber("amountToMoveWheelToGetToDesiredAngleDegrees", amountToMoveWheelToGetToDesiredAngleDegrees);
 		//B15:
 		double amountToMoveMotorToGetToDesiredAngleEncoderPositions = amountToMoveWheelToGetToDesiredAngleDegrees / 360.0  / mGearRatioBetweenMotorAndWheel;
-		SmartDashboard.putNumber("amountToMoveMotorToGetToDesiredAngleEncoderPositions", amountToMoveMotorToGetToDesiredAngleEncoderPositions);
+		//SmartDashboard.putNumber("amountToMoveMotorToGetToDesiredAngleEncoderPositions", amountToMoveMotorToGetToDesiredAngleEncoderPositions);
 		//B16:
 		
 		double targetEncoderPosition = pCurrentNeoPosition + amountToMoveMotorToGetToDesiredAngleEncoderPositions;
-		SmartDashboard.putNumber("targetEncoderPosition", targetEncoderPosition);
+		//SmartDashboard.putNumber("targetEncoderPosition", targetEncoderPosition);
 		return targetEncoderPosition;
 	}
 

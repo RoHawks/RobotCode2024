@@ -1,7 +1,11 @@
 package robosystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.SparkAnalogSensor.Mode;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.SparkAnalogSensor;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
@@ -12,26 +16,50 @@ public class Intake {
     private TalonFX mConveyorBeltTop;
     private TalonFX mConveyorBeltBottom;
     private CANSparkMax mIntakeRoller;
-    
+    private SparkAnalogSensor mBreakBeam;
     private double mPositionAtBreakBeam;
 
-
-    public Intake(TalonFX pConveyorBeltTop, TalonFX pConveyorBeltBottom, CANSparkMax pIntakeRoller)
+    private TalonFX CreateConveyorBeltMotor(int pDeviceID, boolean pIsInverted)
     {
-        mConveyorBeltTop = pConveyorBeltTop;
-        mConveyorBeltBottom = pConveyorBeltBottom;
-        mIntakeRoller = pIntakeRoller;
-        
-        Functionality.configureSparkMaxStrong(pIntakeRoller);
+        TalonFX returnValue = new TalonFX(pDeviceID);
+        returnValue.setInverted(pIsInverted);
+        return returnValue;
+    }
+
+    
+    private CANSparkMax CreateFrontIntakeRollerMotor(int pDeviceID, boolean pIsInverted)
+    {
+        CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushed);
+        returnValue.setSmartCurrentLimit(39);      
+        returnValue.setIdleMode(IdleMode.kCoast);
+        returnValue.setOpenLoopRampRate(1.0);
+        returnValue.setInverted(pIsInverted);
+        returnValue.burnFlash();
+        return returnValue;
+    }
+    
+    public Intake()
+    {
+        mConveyorBeltTop = CreateConveyorBeltMotor(13, false);
+        mConveyorBeltBottom =  CreateConveyorBeltMotor(6, false);
+        mIntakeRoller =  CreateFrontIntakeRollerMotor(15, true); ;
+        mBreakBeam =  CreateFrontIntakeRollerMotor(8, true).getAnalog(Mode.kRelative);
         
         // Set to max value at the start so if the position isn't recorded then it will never backup
         mPositionAtBreakBeam = Double.MAX_VALUE;
+        
+    }
 
+    public boolean getBreakBeamStatus()
+    {
+        SmartDashboard.putNumber("Break Beam Voltage", mBreakBeam.getVoltage());
+        return mBreakBeam.getVoltage() < 2.0;
     }
 
     public void recordPositionAtBreakBeam()
     {
-        mPositionAtBreakBeam = mIntakeRoller.getEncoder().getPosition();
+        mPositionAtBreakBeam = mConveyorBeltTop.getPosition().getValueAsDouble();
+        SmartDashboard.putNumber("Position At Breakbeam", mPositionAtBreakBeam);
     }
 
     private void setSpeeds(double pBeltTopSpeed, double pBeltBottomSpeed, double pIntakeRollerSpeed)
@@ -62,7 +90,7 @@ public class Intake {
     }
     public void setToEjectingSpeed()
     {
-	    setSpeeds(Constants.EJECTING_SPEED,Constants.EJECTING_SPEED, Constants.EJECTING_SPEED); 
+	    setSpeeds(Constants.EJECTING_SPEED); 
     }
 
     public boolean hasConveyorFinishedBackingUp()
@@ -73,7 +101,7 @@ public class Intake {
         SmartDashboard.putNumber("Conveyors Position Change From BreakBeam", positionChangeFromTheBreakBeam);
     
         
-        if (positionChangeFromTheBreakBeam > Constants.ROTATIONS_FOR_CONVEYORS_TO_BACK_UP_TO)
+        if (positionChangeFromTheBreakBeam < Constants.ROTATIONS_FOR_CONVEYORS_TO_BACK_UP_TO)
         { 
             return true;
         }
@@ -91,6 +119,11 @@ public class Intake {
 
         
         
+    }
+
+    public void stopMotors()
+    {
+        setSpeeds(0);
     }
 }
 /* 

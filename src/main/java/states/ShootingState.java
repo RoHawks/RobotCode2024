@@ -41,10 +41,11 @@ public class ShootingState extends AState {
      * Ejection will only work while the button is held, and will go back to normal intaking if released
      */
     @Override
-    protected NextStateInfo Run() {
-        mSwerveDrive.Run(mControls);
+    public NextStateInfo Run() {
+        // ATS commented out for tests!
+        // mSwerveDrive.Run(mControls);
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
-
+        mIntake.setToNormalIntakingSpeed();
         if (mShooterMode == ShooterMode.LowGoal || mShooterMode == ShooterMode.HighGoalManual)
         {
             mShooter.shootAtDefaultSpeed();
@@ -59,7 +60,7 @@ public class ShootingState extends AState {
         }
 
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
-
+        checkForShootingPreperationButtons();
         
     
         if(mControls.GetForceIntakingMode())
@@ -76,6 +77,26 @@ public class ShootingState extends AState {
             return new NextStateInfo(States.Shooting, mShooterMode);
         }
         
+    }
+
+    private void checkForShootingPreperationButtons()
+    {
+        if(mControls.GetPrepareForHighGoalManual())
+        {
+            mShooterMode = ShooterMode.HighGoalManual;
+        }
+        else if(mControls.GetPrepareForHighGoalDriveBy())
+        {
+            mShooterMode = ShooterMode.HighGoalDriveBy;
+        }
+        else if(mControls.GetPrepareForLowGoal())
+        {
+            mShooterMode = ShooterMode.LowGoal;
+        }
+        else if(mControls.GetPrepareForAutoAim())
+        {
+            mShooterMode = ShooterMode.AutoAim;
+        }
     }
 
   

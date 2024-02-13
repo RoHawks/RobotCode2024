@@ -1,12 +1,12 @@
 package states;
 
+import universalSwerve.controls.ISwerveControls;
+import universalSwerve.utilities.SwerveNudgingDirection;
 
-public interface Controls 
+public interface Controls
 {
     public boolean GetForceIntakingMode();
     public boolean GetForceEjectionMode();
-
-    public boolean IsPieceInIntake();
 
     public boolean GetPrepareForHighGoalManual();
     public boolean GetPrepareForHighGoalDriveBy(); 
@@ -36,7 +36,7 @@ public interface Controls
         WEST
     }
 
-    public SwerveNudgingDirection GetSwerveNudgingDirection();
+    public universalSwerve.utilities.SwerveNudgingDirection GetSwerveNudgingDirection();
 
     public boolean GetManualAimCounterClockwise();
     public boolean GetManualAimClockwise();

@@ -19,6 +19,11 @@ public final class WheelLabel
     {
         return mTextLabel;
     }
+    
+    public String ToString()
+    {
+        return Text();
+    }
 
     public static WheelLabel FromInt(int pIndex)
     {

@@ -21,8 +21,6 @@ public class IntakingState extends AState {
     private IntakeMode mIntakeMode;
     private ShooterMode mShooterMode;
 
-    private long mTimeEnteredIntakeMode;
-
     public enum IntakeMode
     {
         NormalIntaking,
@@ -43,14 +41,22 @@ public class IntakingState extends AState {
             mIntakeMode = IntakeMode.NormalIntaking;
             mShooterMode = ShooterMode.Undefined;
         }
-        
+    
+    
+    public void logIntakingStateValues()
+    {
+        SmartDashboard.putString("Intaking State: IntakingMode", mIntakeMode.toString());
+        SmartDashboard.putString("Intaking State: ShooterMode", mShooterMode.toString());
+    }
+    
     /**
      * Runs the intake. <br><br>
      * Ejection will only work while the button is held, and will go back to normal intaking if released
      */
     @Override
-    protected NextStateInfo Run() {
-        mSwerveDrive.Run(mControls);
+    public NextStateInfo Run() {
+        // ATS commented out for tests!
+    //    mSwerveDrive.Run(mControls);
         mShooter.setAngleToIntakingAngle();
 
         if (mIntakeMode == IntakeMode.NormalIntaking)
@@ -61,14 +67,9 @@ public class IntakingState extends AState {
         {
             mIntake.setToEjectingSpeed();
         } 
-
-        if(mControls.GetForceIntakingMode())
-        {
-            setIntakingMode(IntakeMode.NormalIntaking);
-        }
         
         
-        if(mControls.GetForceEjectionMode())
+        if (mControls.GetForceEjectionMode())
         {
             setIntakingMode(IntakeMode.Ejecting);
         }
@@ -76,11 +77,16 @@ public class IntakingState extends AState {
         {
             setIntakingMode(IntakeMode.NormalIntaking);
         }
+
+        if(mControls.GetForceIntakingMode())
+        {
+            setIntakingMode(IntakeMode.NormalIntaking);
+        }
                 
         checkForShootingPreperationButtons();
         
 
-        if (mControls.IsPieceInIntake())
+        if (mIntake.getBreakBeamStatus())
         {
             mIntake.recordPositionAtBreakBeam();
             return new NextStateInfo(States.Holding, mShooterMode);
@@ -114,7 +120,6 @@ public class IntakingState extends AState {
     private void setIntakingMode(IntakeMode pIntakeMode)
     {
         mIntakeMode = pIntakeMode;
-        mTimeEnteredIntakeMode = System.currentTimeMillis();
     }
 
 
@@ -123,6 +128,10 @@ public class IntakingState extends AState {
         super.EnterState(pEntryParameter);
         //For normal usage
         setIntakingMode(IntakeMode.NormalIntaking);
+        if (pEntryParameter instanceof ShooterMode)
+        {
+            mShooterMode = (ShooterMode) pEntryParameter;
+        }
         
     }
 

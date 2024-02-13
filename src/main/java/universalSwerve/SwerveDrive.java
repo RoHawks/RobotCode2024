@@ -1,6 +1,9 @@
 package universalSwerve;
 
 import universalSwerve.components.Wheel;
+import universalSwerve.components.WheelLabel;
+import universalSwerve.components.implementations.WheelMode;
+import universalSwerve.controls.ISwerveControls;
 import universalSwerve.hardware.IGyroscope;
 import universalSwerve.utilities.AngleUtilities;
 import universalSwerve.utilities.Conversions;
@@ -11,7 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import states.Controls;
+import universalSwerve.utilities.SwerveNudgingDirection;
 
 public class SwerveDrive 
 {
@@ -19,14 +22,7 @@ public class SwerveDrive
     {
         return mWheels[0].GetDistanceTravelled();
     }
-    public enum SwerveNudgingDirection
-    {
-        NONE,
-        NORTH,
-        SOUTH,
-        EAST,
-        WEST
-    }
+  
 
     private Wheel mNEWheel;
     private Wheel mSEWheel;
@@ -47,6 +43,8 @@ public class SwerveDrive
     private double mLastIntentionalAngle = 0;
     private boolean mIsIntentionallyTurning = false;
     private double mNudgingSpeed = 0.2;
+
+    private boolean mDiagnosticsEnabled = false;
 
 	public enum DrivingStyle
 	{
@@ -82,15 +80,19 @@ public class SwerveDrive
         mAngleTrackController = new PIDController(0.01, 0, 0);
         mAngleTrackController.enableContinuousInput(0, 360);
         
+        Initialize();
     }
     
-    public void Initialize()
+    private void Initialize()
     {
         for(int i = 0; i < mWheels.length; i++)
         {
             mWheels[i].Initialize();
         }
+
+        mGyroscope.SetCurrentAngle(0);
     }
+
    
 
     //ATS:  What's going on here:  In 2023 a white paper was written describing how
@@ -321,6 +323,7 @@ public class SwerveDrive
 		SwerveModuleState[] targetModelStates = CalculateModuleTargetStates(linearSpeedFrontBackComponent, linearSpeedLeftRightComponent, requestedRotationalSpeed, mGyroscope.GetCurrentAngle(), pDrivingStyle);
 		// the states/targets have been calculated above, now assign
         //ATS Added for NY:
+        //ATS 12/11/2023...  Why do we NOT do this??  Not sure why this is commented out.  Need to experiment.
         //targetModelStates = DesaturateWheelSpeeds(targetModelStates);
         for(int i = 0; i < mWheels.length; i++)
 		{			
@@ -335,16 +338,30 @@ public class SwerveDrive
                 SwerveModuleState optimizedTargetState = OptimizeTargetState(targetState, wheel.GetCurrentAngle());
                 //SwerveModuleState optimizedTargetState =targetState;
 
-                double targetAngle = AngleUtilities.ConvertSwerveKinematicsAnglesToOurAngles(optimizedTargetState.angle.getDegrees());                
-                wheel.SetWheelTargetAngle(targetAngle);
-                wheel.SetWheelVelocity(Conversions.MetersPerSecondToInchesPerSecond(optimizedTargetState.speedMetersPerSecond));
-
+                switch(wheel.GetWheelMode())
+                {
+                    case Enabled:
+                        double targetAngle = AngleUtilities.ConvertSwerveKinematicsAnglesToOurAngles(optimizedTargetState.angle.getDegrees());                
+                        wheel.SetWheelTargetAngle(targetAngle);
+                        wheel.SetWheelVelocity(Conversions.MetersPerSecondToInchesPerSecond(optimizedTargetState.speedMetersPerSecond));
+                        break;
+                    case DontMove:
+                        wheel.StopEverything();
+                        break;
+                    case Castor:
+                        throw new RuntimeException("Castor not supported yet.");
+                    default:
+                        throw new RuntimeException("Unknown wheel mode.");
+                        
+                }
+                /*
                 if(i == 3)
                 {
                     //log Nw
                     SmartDashboard.putNumber("CurrentWheelAngle", wheel.GetCurrentAngle());
                     SmartDashboard.putNumber("TargetAngle", targetAngle);
                 }
+                */
 
             }
 		}		
@@ -372,20 +389,13 @@ public class SwerveDrive
             pTargetModelStates[i].speedMetersPerSecond *= scale;
         }
 
-        /*
-        SmartDashboard.putNumber("Desaturate_absoluteMaxSpeed", absoluteMaxSpeed);
-        SmartDashboard.putNumber("Desaturate_mMaxLinearSpeed", mMaxLinearSpeed);
-        SmartDashboard.putNumber("Desaturate_scale", scale);
-        */
         return pTargetModelStates;
     }
 
     public void StandardSwerveDrive(double pXTranslationComponent, double pYTranslationComponent, double pTranslationVelocityPercentage, double pRotationSpeedPercentage, boolean pTrackAngle, double pAngleToTrack)
     {
 
-        SmartDashboard.putNumber("GyroAngle",mGyroscope.GetCurrentAngle());
-
-
+      
         if(Math.abs(pRotationSpeedPercentage) < 0.01)
         {
             this.mLastIntentionalAngle = mGyroscope.GetCurrentAngle();
@@ -474,13 +484,6 @@ public class SwerveDrive
             double targetAngle = pDegrees;
                             
             wheel.SetWheelTargetAngle(targetAngle);
-            if(i == 0)
-            {
-                //log NE
-                SmartDashboard.putNumber("CurrentWheelAngle", wheel.GetCurrentAngle());
-                //SmartDashboard.putNumber("TargetAngle", targetAngle);
-            }
-
         }
     }
     public void SetWheelsToBreakMode()
@@ -510,7 +513,7 @@ public class SwerveDrive
     {
         for(int i = 0; i < mWheels.length; i++)
         {
-            SmartDashboard.putBoolean(mWheels[i].GetWheelLabel().Text() + "_IsClose", mWheels[i].IsCloseToTargetAngle());
+            //SmartDashboard.putBoolean(mWheels[i].GetWheelLabel().Text() + "_IsClose", mWheels[i].IsCloseToTargetAngle());
             if(!mWheels[i].IsCloseToTargetAngle())
             {
                 return false;
@@ -535,10 +538,10 @@ public class SwerveDrive
         }
     }
 
-    public void Run(Controls pControls)
+    public void Run(ISwerveControls pControls)
     {
-        Controls.SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
-        if(nudgingDirection == Controls.SwerveNudgingDirection.NONE)
+        SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
+        if(nudgingDirection == SwerveNudgingDirection.NONE)
         {
             double rotation = pControls.GetSwerveRotationalSpeed();
             if(Math.abs(rotation) < 0.10)
@@ -546,19 +549,19 @@ public class SwerveDrive
                 rotation = 0;
             }
 
-            StandardSwerveDrive(pControls.GetSwerveXComponent(), pControls.GetSwerveYComponent(), pControls.GetSwerveLinearSpeed(), rotation, pControls.GetTrackScoringAngle(), 180);
+            StandardSwerveDrive(pControls.GetSwerveXComponent(), pControls.GetSwerveYComponent(), pControls.GetSwerveLinearSpeed(), rotation, pControls.GetTrackSpecificAngle(), pControls.GetSpecificAngleToTrack());
         }
         else
         {
-            if(nudgingDirection == Controls.SwerveNudgingDirection.EAST)
+            if(nudgingDirection == SwerveNudgingDirection.EAST)
             {
                 Nudge(SwerveNudgingDirection.EAST);
             }
-            else if(nudgingDirection == Controls.SwerveNudgingDirection.WEST)
+            else if(nudgingDirection == SwerveNudgingDirection.WEST)
             {
                 Nudge(SwerveNudgingDirection.WEST);
             }
-            else if(nudgingDirection == Controls.SwerveNudgingDirection.NORTH)
+            else if(nudgingDirection == SwerveNudgingDirection.NORTH)
             {
                 Nudge(SwerveNudgingDirection.NORTH);
             }
@@ -582,6 +585,7 @@ public class SwerveDrive
         }
     }
 
+    /*
     public void LogDriveData()
     {
         for(int i = 0; i < mWheels.length; i++)
@@ -591,5 +595,57 @@ public class SwerveDrive
             
             
         }
+    }
+    */
+
+    private Wheel GetWheelByLabel(WheelLabel pLabel)
+    {
+        for(int i = 0; i < mWheels.length; i++)
+        {
+            if(mWheels[i].GetWheelLabel().equals(pLabel))
+            {
+                return mWheels[i];
+            }
+        }
+        throw new RuntimeException("Unknown wheel label:" + pLabel.Text());
+    }
+
+    public void EnableDiagnostics(WheelLabel pLabel)
+    {
+        GetWheelByLabel(pLabel).EnableDiagnostics();
+    }
+
+    public void DisableDiagnostics(WheelLabel pLabel)
+    {
+        GetWheelByLabel(pLabel).DisableDiagnostics();
+    }
+
+    public void SetWheelMode(WheelLabel pLabel, WheelMode pWheelMode)
+    {
+        GetWheelByLabel(pLabel).SetWheelMode(pWheelMode);
+    }
+
+    public void EnableDiagnostics()
+    {
+        mDiagnosticsEnabled = true;
+    }
+
+    public void DisableDiagnostics()
+    {
+        mDiagnosticsEnabled = false;    
+    }
+    public void LogDiagnostics()
+    {
+        if(mDiagnosticsEnabled)
+        {
+            for(int i = 0; i < mWheels.length; i++)
+            {
+                mWheels[i].LogDiagnostics();
+            }
+
+
+            SmartDashboard.putNumber("GyroAngle",mGyroscope.GetCurrentAngle());
+        }
+
     }
 }

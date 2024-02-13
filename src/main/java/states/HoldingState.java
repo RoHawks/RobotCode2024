@@ -21,8 +21,6 @@ public class HoldingState extends AState {
     private HoldingMode mHoldingMode; // ARGH everything else is ShooterMode IntakeMode this naming convention DOESNT WORK for HoldingMode 
     private ShooterMode mShooterMode;
 
-    private long mTimeEnteredIntakeMode;
-
     public enum HoldingMode
     {
         BackingUp,
@@ -45,7 +43,7 @@ public class HoldingState extends AState {
             mShooterMode = ShooterMode.Undefined;
         }
         
-    protected void determineCurrentStateAndRecordConveyorPositionAtTop()
+    protected void determineCurrentState()
     {
         if (mControls.GetForceEjectionMode())
         {
@@ -53,30 +51,45 @@ public class HoldingState extends AState {
         }
         else
         {
-            if (mControls.IsPieceInIntake())
+            if (mIntake.getBreakBeamStatus())
             {
                 mHoldingMode = HoldingMode.BackingUp;
-                mIntake.recordPositionAtBreakBeam();
+                return;
             }
-
-            if (mHoldingMode == HoldingMode.BackingUp)
+            if (mHoldingMode != HoldingMode.Holding)
             {
                 boolean hasFinishedBackingUp = mIntake.hasConveyorFinishedBackingUp();
                 if (hasFinishedBackingUp) 
                 {
                     mHoldingMode = HoldingMode.Holding;
                 }
+                else
+                {
+                    mHoldingMode = HoldingMode.BackingUp;
+                }
             }
+            
         }
     }
 
-    @Override
-    protected NextStateInfo Run() {
-        mSwerveDrive.Run(mControls);
-        mShooter.setAngleBasedOnShooterMode(mShooterMode);
+    public void logHoldingStateValues()
+    {
+        SmartDashboard.putString("Holding State: HoldingMode", mHoldingMode.toString());
+        SmartDashboard.putString("Holding State: ShooterMode", mShooterMode.toString());
+    }
 
-        
-        determineCurrentStateAndRecordConveyorPositionAtTop();
+    @Override
+    public NextStateInfo Run() {
+        // ATS commented out for tests!
+        //mSwerveDrive.Run(mControls);
+        mShooter.setAngleBasedOnShooterMode(mShooterMode);
+        mShooter.shootAtDefaultSpeed();
+        determineCurrentState();
+
+        if (mIntake.getBreakBeamStatus())
+        {
+            mIntake.recordPositionAtBreakBeam();
+        }
 
         if (mHoldingMode == HoldingMode.BackingUp)
         {
