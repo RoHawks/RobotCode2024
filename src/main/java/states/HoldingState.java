@@ -85,10 +85,30 @@ public class HoldingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        mSwerveDrive.Run(mControls);
+        if (mShooterMode == ShooterMode.LowGoal)
+        {
+            mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
+            
+        }
+        else if (mShooterMode == ShooterMode.HighGoalManual)
+        {
+            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
+
+        }
+        else if (mShooterMode == ShooterMode.AutoAim)
+        {
+            mSwerveDrive.Run(mControls); // later whatever stuff I need to do
+
+        } 
+        else if (mShooterMode == ShooterMode.HighGoalDriveBy)
+        {
+            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
+
+        }
+
         logHoldingStateValues();
         mExtendoArm.retract();
-        mShooter.checkIfPersistentlyHasCorrectSpeed();
+        mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
         mShooter.logShooterInformation();
 
 
@@ -108,7 +128,14 @@ public class HoldingState extends AState {
         else if (mHoldingMode == HoldingMode.Holding)
         {
             mIntake.setToHoldingSpeed();
-            mShooter.spinUpToCorrectSpeed();
+            if (mShooterMode == ShooterMode.LowGoal)
+            {
+                mShooter.spinUpToLowGoalSpeed();
+            }
+            else
+            {
+                mShooter.spinUpToHighGoalSpeed();
+            }
         }
         else if (mHoldingMode == HoldingMode.Ejecting)
         {

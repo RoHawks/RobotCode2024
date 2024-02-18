@@ -12,6 +12,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.Arrays;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
+
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -23,7 +26,7 @@ import edu.wpi.first.util.datalog.DoubleLogEntry;
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-public class Robot extends TimedRobot {
+public class RobotLimelight extends TimedRobot {
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
@@ -82,14 +85,21 @@ public class Robot extends TimedRobot {
   }
 
   /** This function is called once when teleop is enabled. */
+  CANSparkMax rollerMotor;
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    rollerMotor = new CANSparkMax(15, MotorType.kBrushed);
+  }
 
   /** This function is called periodically during operator control. */
 
   public double[] getCameraPoseTargetSpace(String json)
   {
     // try {
+      if (json.equals("null"))
+      {
+        return null;
+      }
       int idx1 = json.indexOf("t6c_ts");
       int idx2 = json.indexOf("t6r_fs");
       if (idx1 > 0 && idx2 > 0)
@@ -117,40 +127,59 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void teleopPeriodic() {
+    
+    
+
+    // // String[] entries = {"botpose", "botpose_wpiblue", 
+    // //                     "botpose_wpired", "camerapose_targetspace", 
+    // //                     "targetpose_cameraspace", "targetpose_robotspace",
+    // //                     "botpose_targetspace", "camerapose_robotspace",
+    // //                     "tid"};
+
+    // // String currentEntry = entries[(int)((System.currentTimeMillis() / 3000) % entries.length)];
+
+    // // NetworkTableEntry tbp = table.getEntry(currentEntry);
+
+
+
 
     NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
     NetworkTableEntry jsonNTE = table.getEntry("json");
-
-    // String[] entries = {"botpose", "botpose_wpiblue", 
-    //                     "botpose_wpired", "camerapose_targetspace", 
-    //                     "targetpose_cameraspace", "targetpose_robotspace",
-    //                     "botpose_targetspace", "camerapose_robotspace",
-    //                     "tid"};
-
-    // String currentEntry = entries[(int)((System.currentTimeMillis() / 3000) % entries.length)];
-
-    // NetworkTableEntry tbp = table.getEntry(currentEntry);
-
-
-
-
-
     String json_dump = jsonNTE.getString("null");
 
     double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
-    if (camerapose_targetspace == null)
+    if (camerapose_targetspace != null)
     {
-      camerapose_targetspace = new double[0];
-    } 
-    // double[] botPose = tbp.getDoubleArray(new double[6]);
+      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
+      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
+      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
+
+      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
+      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
+      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
+      SmartDashboard.putBoolean("Can See Tag", true);
+    }
+    else
+    {
+      SmartDashboard.putNumber("X displacement", -1);
+      SmartDashboard.putNumber("Y displacement", -1);
+      SmartDashboard.putNumber("Z displacement", -1);
+      SmartDashboard.putNumber("Roll displacement", -1);
+      SmartDashboard.putNumber("Pitch displacement", -1);
+      SmartDashboard.putNumber("Yaw displacement", -1);
+      SmartDashboard.putBoolean("Can See Tag", false);
+    }
     
-    SmartDashboard.putString("json", json_dump);
+    // SmartDashboard.putString("json", json_dump);
     // SmartDashboard.putString("currentEntry", Arrays.toString(botPose));
-    // SmartDashboard.putNumber("Limelights1", s1);
+    // // SmartDashboard.putNumber("Limelights1", s1);
 
-    // SmartDashboard.putNumber("LimelightBP1", botPose[0]);
+    // // SmartDashboard.putNumber("LimelightBP1", botPose[0]);
 
-    SmartDashboard.putString("CP_TS", Arrays.toString(camerapose_targetspace));
+    
+
+
+    // AM i in the right left right range to shoot 
   }
 
   /** This function is called once when the robot is disabled. */

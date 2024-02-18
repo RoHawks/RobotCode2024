@@ -77,7 +77,7 @@ public class SwerveDrive
         mMaxRotationalSpeed = pMaxRotationalSpeed;
         mNudgingSpeed = pNudgingSpeed;
 
-        mAngleTrackController = new PIDController(0.01, 0, 0);
+        mAngleTrackController = new PIDController(0.02, 0, 0);
         mAngleTrackController.enableContinuousInput(0, 360);
         
         Initialize();
@@ -486,7 +486,8 @@ public class SwerveDrive
             wheel.SetWheelTargetAngle(targetAngle);
         }
     }
-    public void SetWheelsToBreakMode()
+
+    private void SetWheelsToBreakMode()
     {
         for(int i = 0; i < mWheels.length; i++)
 		{			
@@ -495,7 +496,7 @@ public class SwerveDrive
         }
     }
 
-    public void SetWheelsToCoastMode()
+    private void SetWheelsToCoastMode()
     {
         for(int i = 0; i < mWheels.length; i++)
 		{			
@@ -540,6 +541,7 @@ public class SwerveDrive
 
     public void Run(ISwerveControls pControls)
     {
+        SmartDashboard.putNumber("Old Gyro Angle", mGyroscope.GetCurrentAngle());
         SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
         if(nudgingDirection == SwerveNudgingDirection.NONE)
         {
@@ -550,6 +552,40 @@ public class SwerveDrive
             }
 
             StandardSwerveDrive(pControls.GetSwerveXComponent(), pControls.GetSwerveYComponent(), pControls.GetSwerveLinearSpeed(), rotation, pControls.GetTrackSpecificAngle(), pControls.GetSpecificAngleToTrack());
+        }
+        else
+        {
+            if(nudgingDirection == SwerveNudgingDirection.EAST)
+            {
+                Nudge(SwerveNudgingDirection.EAST);
+            }
+            else if(nudgingDirection == SwerveNudgingDirection.WEST)
+            {
+                Nudge(SwerveNudgingDirection.WEST);
+            }
+            else if(nudgingDirection == SwerveNudgingDirection.NORTH)
+            {
+                Nudge(SwerveNudgingDirection.NORTH);
+            }
+            else// (nudgingDirection == Controls.SwerveNudgingDirection.SOUTH)
+            {
+                Nudge(SwerveNudgingDirection.SOUTH);
+            }
+        }
+    }
+
+    public void Run(ISwerveControls pControls, boolean pShouldTrackSpecificAngle, double pAngleToTrack)
+    {
+        SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
+        if(nudgingDirection == SwerveNudgingDirection.NONE)
+        {
+            double rotation = pControls.GetSwerveRotationalSpeed();
+            if(Math.abs(rotation) < 0.10)
+            {
+                rotation = 0;
+            }
+
+            StandardSwerveDrive(pControls.GetSwerveXComponent(), pControls.GetSwerveYComponent(), pControls.GetSwerveLinearSpeed(), rotation, pShouldTrackSpecificAngle, pAngleToTrack);
         }
         else
         {

@@ -51,6 +51,7 @@ public class TestControlsWithSwerve implements Controls {
 
     @Override
     public boolean GetStartShootingSequence() {
+        // return mMainController.getLeftBumper() && mMainController.getRightBumper();
         return mAlternateController.getBButton();
     }
 

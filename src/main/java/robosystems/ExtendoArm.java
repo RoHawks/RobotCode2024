@@ -13,8 +13,8 @@ public class ExtendoArm {
     private CANSparkMax mExtendoMotor;
     private RelativeEncoder mExtendoEncoder;
     
-    private double LOW_GOAL_TARGET = -1200; //Replace with proper value
-    private double TRAP_TARGET = -1800; //Replace with proper value
+    private double LOW_GOAL_TARGET = -2100; //Replace with proper value
+    private double TRAP_TARGET = -2800; //Replace with proper value
     private double RETRACT_TARGET = -50;
    
     
@@ -27,7 +27,7 @@ public class ExtendoArm {
         returnValue.setInverted(pIsInverted);
 
         returnValue.setSoftLimit(SoftLimitDirection.kForward, -20);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -1900);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -2500);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
         

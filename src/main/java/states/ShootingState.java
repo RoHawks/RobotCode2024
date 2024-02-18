@@ -1,10 +1,12 @@
 package states;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-
+import frc.robot.Functionality;
 import robosystems.Shooter;
 import states.IntakingState.IntakeMode;
 import robosystems.ExtendoArm;
@@ -51,39 +53,71 @@ public class ShootingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        mSwerveDrive.Run(mControls);
+        
         logShootingStateInformation();
         checkForShootingPreperationButtons();
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
         
-        mShooter.spinUpToCorrectSpeed();
+        
 
         if (mShooterMode == ShooterMode.LowGoal)
         {
+            mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
             mExtendoArm.lowGoalExtension();
+            mShooter.spinUpToLowGoalSpeed();
         }
         else if (mShooterMode == ShooterMode.HighGoalManual)
         {
+            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
             mExtendoArm.retract();
+            mShooter.spinUpToHighGoalSpeed();
         }
         else if (mShooterMode == ShooterMode.AutoAim)
         {
+            mSwerveDrive.Run(mControls); // later whatever stuff I need to do
             mExtendoArm.retract();
+            mShooter.spinUpToHighGoalSpeed();
         } 
         else if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
+            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
             mExtendoArm.retract();
+            mShooter.spinUpToHighGoalSpeed();
         }
 
-        boolean inLowGoalAndExtendedFarEnough = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
-        
-        if (mShooter.checkIfPersistentlyHasCorrectSpeed()
-            && inLowGoalAndExtendedFarEnough)
+        boolean highGoalDriveByExtensionConditonsMet = true;
+        if (mShooterMode == ShooterMode.HighGoalDriveBy)
+        {
+            // NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+            // NetworkTableEntry jsonNTE = table.getEntry("json");
+            // double[] cameraPositionInTargetSpace = Functionality.getCameraPoseTargetSpace(jsonNTE.getString(null));  
+            // double distanceInYAndZ = Math.sqrt(
+            //     Math.pow(cameraPositionInTargetSpace[1], 2) +
+            //     Math.pow(cameraPositionInTargetSpace[2], 2));
+            // highGoalDriveByExtensionConditonsMet = Math.abs(distanceInYAndZ - Constants.DRIVE_BY_SHOOTNG_DISTANCE) < 0;
+        }
+        else{
+
+        }
+
+
+        boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
+       
+        if (mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode)
+            && lowGoalExtensionConditionsMet)
         {
             if (!mHasShot)
             {
                 mHasShot = true;
                 mTimeStartedToShoot = System.currentTimeMillis();
+                if (mShooterMode == ShooterMode.HighGoalManual)
+                {
+                   
+                }
+                else if (mShooterMode == ShooterMode.LowGoal)
+                {
+                    mSwerveDrive.TurnAllWheels(270);
+                }
             } 
             mIntake.setToLaunchingNoteIntoTheShooterSpeed();
         }
@@ -103,7 +137,7 @@ public class ShootingState extends AState {
 
         SmartDashboard.putNumber("Shooting: Time Elapsed Since Shooting", System.currentTimeMillis() - mTimeStartedToShoot);
 
-        if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > 3000)
+        if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > 500)
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
@@ -137,7 +171,7 @@ public class ShootingState extends AState {
     public void logShootingStateInformation()
     {
         SmartDashboard.putString("Shooting: Shooting Mode", mShooterMode.name());
-        SmartDashboard.putBoolean("Persistently at Speed", mShooter.checkIfPersistentlyHasCorrectSpeed());
+        SmartDashboard.putBoolean("Persistently at Speed", mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode));
         mShooter.logShooterInformation();
     }
 

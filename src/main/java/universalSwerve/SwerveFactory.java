@@ -26,6 +26,7 @@ import universalSwerve.components.implementations.TalonSRXOpenLoopTranslationSys
 import universalSwerve.hardware.implementations.ADIS16470Gyro;
 import universalSwerve.hardware.implementations.LampreyWheelAngleReader;
 import universalSwerve.hardware.implementations.NavX;
+import universalSwerve.hardware.implementations.Pigeon2Imu;
 import universalSwerve.hardware.implementations.ZeroGyro;
 import universalSwerve.utilities.PIDFConfiguration;
 import com.revrobotics.CANSparkMax;
@@ -51,9 +52,9 @@ public class SwerveFactory
         double MAX_ROTATIONAL_SPEED = 120; //degrees per second
         double NUDGING_SPEED = 0.1;// * 0.15 / 0.17; //scaled down to keep actual nudging speed consistent
 
-        ADIS16470Gyro gyro = new ADIS16470Gyro(edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis.kZ, true);
-
-        //Drive FPID Configurations:
+        //ADIS16470Gyro gyro = new ADIS16470Gyro(edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis.kZ, true);
+        Pigeon2Imu gyro = new Pigeon2Imu(true);
+                //Drive FPID Configurations:
         PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12);
         PIDFConfiguration seDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12);
         PIDFConfiguration swDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12);
@@ -89,7 +90,7 @@ public class SwerveFactory
         
         MotorOutputConfigs driveMotorOutputConfig = new MotorOutputConfigs();
         //driveMotorOutputConfig.Inverted = InvertedValue.CounterClockwise_Positive;
-        driveMotorOutputConfig.NeutralMode = NeutralModeValue.Coast;        
+        driveMotorOutputConfig.NeutralMode = NeutralModeValue.Brake;        
 
         FeedbackConfigs driveMotorfeedbackConfigs = new FeedbackConfigs();
         driveMotorfeedbackConfigs.FeedbackSensorSource  = FeedbackSensorSourceValue.RotorSensor;
@@ -97,6 +98,8 @@ public class SwerveFactory
         ClosedLoopRampsConfigs driveMotorClosedLoopRampConfigs = new ClosedLoopRampsConfigs();
         driveMotorClosedLoopRampConfigs.DutyCycleClosedLoopRampPeriod = 0.05;
         driveMotorClosedLoopRampConfigs.VoltageClosedLoopRampPeriod= 0.05;
+        
+
 
         class DriveFalconCreator { TalonFX CreateDriveFalcon(int pDriveChannel) 
             { 
@@ -105,8 +108,9 @@ public class SwerveFactory
                 returnValue.getConfigurator().apply(driveMotorOutputConfig);                
                 returnValue.getConfigurator().apply(driveMotorfeedbackConfigs);                
                 returnValue.getConfigurator().apply(driveMotorClosedLoopRampConfigs);
-                returnValue.getConfigurator().apply(driveMotorClosedLoopRampConfigs);
-                returnValue.setInverted(false);                
+                
+                returnValue.setInverted(false);
+                                                
                 return returnValue;
             }}
 

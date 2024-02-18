@@ -23,7 +23,7 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     private double mGearRatio;
 
 
-    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, false, false, false);
+    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, true, false, false);
   
 
 

@@ -18,7 +18,9 @@ import states.StateMachine;
 import states.TestControls;
 import states.TestControlsWithSwerve;
 import edu.wpi.first.wpilibj.XboxController;
-
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import universalSwerve.SwerveDrive;
@@ -32,7 +34,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-
+import com.ctre.phoenix6.hardware.core.CorePigeon2;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -62,12 +64,13 @@ public class Robot extends TimedRobot
   private Shooter mShooter;
 
   
-  private boolean mAnglerMotorZeroingHasOccurred;
+  private boolean mAnglerMotorAndGyroZeroingHasOccurred;
   private IntakingState mIntakingState;
   private HoldingState mHoldingState;
   private ShootingState mShootingState;
 
   private StateMachine mStateMachine;
+  // private CorePigeon2 mPigeon2; 
 
   private XboxController mMainController;
 
@@ -122,9 +125,9 @@ public class Robot extends TimedRobot
   @Override
   public void robotInit() {
     mMainController = new XboxController(0);
-  
+    // mPigeon2 = new CorePigeon2(22);
 
-    mAnglerMotorZeroingHasOccurred = false;
+    mAnglerMotorAndGyroZeroingHasOccurred = false;
     CreateMainComponents();
     CreateControls();
 
@@ -477,21 +480,53 @@ public class Robot extends TimedRobot
     }
   }
 
-  public void zeroAnglerEncoder()
+  public void logLimeLightInfo()
+  {
+    NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+    NetworkTableEntry jsonNTE = table.getEntry("json");
+    String json_dump = jsonNTE.getString("null");
+
+    double[] camerapose_targetspace = Functionality.getCameraPoseTargetSpace(json_dump);
+    if (camerapose_targetspace != null)
+    {
+      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
+      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
+      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
+
+      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
+      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
+      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
+      SmartDashboard.putBoolean("Can See Tag", true);
+    }
+    else
+    {
+      SmartDashboard.putNumber("X displacement", -1);
+      SmartDashboard.putNumber("Y displacement", -1);
+      SmartDashboard.putNumber("Z displacement", -1);
+      SmartDashboard.putNumber("Roll displacement", -1);
+      SmartDashboard.putNumber("Pitch displacement", -1);
+      SmartDashboard.putNumber("Yaw displacement", -1);
+      SmartDashboard.putBoolean("Can See Tag", false);
+    }
+  }
+
+  public void zeroAnglerEncoderAndGyro()
   {
     // SmartDashboard.putBoolean("Limit Reached", mAnglerHardReverseLimitSwitch.isPressed());
     // SmartDashboard.putNumber("Angler Pos", mAnglerMotor.getEncoder().getPosition());
     
-    if (!mAnglerMotorZeroingHasOccurred)
+    if (!mAnglerMotorAndGyroZeroingHasOccurred)
     {
       mShooter.setAnglerSpeed(-0.05);
-
-    
+      
       if (mShooter.isAnglerHardReverseLimitSwitchPressed())
       {
-        mAnglerMotorZeroingHasOccurred = true;
+        mSwerveDrive.SetGyroscopeCurrentAngle(0);
+    
+        mAnglerMotorAndGyroZeroingHasOccurred = true;
         mShooter.setAnglerSpeed(0);
         mShooter.zeroAnglerMotorInformation();
+        Constants.setLowGoalRotation();
       }
     }
     else
@@ -502,12 +537,18 @@ public class Robot extends TimedRobot
 
 
 
+
   private double mPosition = -800;
   public void teleopPeriodic()
   {
-    if (!mAnglerMotorZeroingHasOccurred)
+    // SmartDashboard.putNumber("New Gyro Roll", mPigeon2.getRoll().getValueAsDouble());
+    // SmartDashboard.putNumber("New Gyro Yaw", mPigeon2.getYaw().getValueAsDouble());
+    // SmartDashboard.putNumber("New Gyro Pitch", mPigeon2.getPitch().getValueAsDouble());
+    // logLimeLightInfo();
+    // SmartDashboard.putNumber("New Gyro Angle", mPigeon2.getRoll().getValueAsDouble());
+    if (!mAnglerMotorAndGyroZeroingHasOccurred)
     {
-      zeroAnglerEncoder();
+      zeroAnglerEncoderAndGyro();
       return;
     }
   

@@ -1,5 +1,6 @@
 package robosystems;
 
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -88,7 +89,14 @@ public class Shooter{
         
         MotorOutputConfigs motorOutputConfig = new MotorOutputConfigs();
         motorOutputConfig.NeutralMode = NeutralModeValue.Coast;
+        
+        ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
+        clrc.DutyCycleClosedLoopRampPeriod = 0.5;
+        clrc.VoltageClosedLoopRampPeriod = 0.5;
+
         returnValue.getConfigurator().apply(motorOutputConfig);
+
+
 
         return returnValue;
     }
@@ -166,9 +174,13 @@ public class Shooter{
         return mHardReverseLimitSwitch.isPressed();
     }
 
-    public void spinUpToCorrectSpeed()
+    public void spinUpToHighGoalSpeed()
     {
-        setSpeed(Constants.SHOOTER_TOP_DEFAULT_SPEED, Constants.SHOOTER_BOTTOM_DEFAULT_SPEED);
+        setSpeed(Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED, Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
+    }
+    public void spinUpToLowGoalSpeed()
+    {
+        setSpeed(Constants.SHOOTER_LOW_TOP_DEFAULT_SPEED, Constants.SHOOTER_LOW_BOTTOM_DEFAULT_SPEED);
     }
 
     public void backingUpNoteToPreventFallingOut(){ // to prevent note escape
@@ -181,21 +193,33 @@ public class Shooter{
         return -mTopShooterRoller.getVelocity().getValueAsDouble();
     }
 
-    public boolean checkIfPersistentlyHasCorrectSpeed()
+    public boolean checkIfPersistentlyHasCorrectSpeed(ShooterMode pShooterMode)
     {
+        double topSpeed;
+        double bottomSpeed;
+        if (pShooterMode == ShooterMode.LowGoal)
+        {
+            topSpeed = Constants.SHOOTER_LOW_TOP_DEFAULT_SPEED;
+            bottomSpeed = Constants.SHOOTER_LOW_BOTTOM_DEFAULT_SPEED;
+        } 
+        else
+        {
+            topSpeed = Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED;
+            bottomSpeed = Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED;
+        }
          // Should be a global variable at the beginning
         double lowerPercent = 0.8;
         double higherPercent = 1.2;
 
         boolean bothShootersAreAboveLowerBound = getTopShooterVelocity()
-            > Constants.SHOOTER_TOP_DEFAULT_SPEED * lowerPercent && 
+            > topSpeed * lowerPercent && 
             mBottomShooterRoller.getVelocity().getValueAsDouble() 
-            > Constants.SHOOTER_BOTTOM_DEFAULT_SPEED * lowerPercent;
+            > bottomSpeed * lowerPercent;
 
         boolean bothShootersAreAboveHigherBound = getTopShooterVelocity()
-            < Constants.SHOOTER_TOP_DEFAULT_SPEED * higherPercent && 
+            < topSpeed * higherPercent && 
             mBottomShooterRoller.getVelocity().getValueAsDouble() 
-            < Constants.SHOOTER_BOTTOM_DEFAULT_SPEED * higherPercent;
+            < bottomSpeed * higherPercent;
 
         if (bothShootersAreAboveLowerBound && 
             bothShootersAreAboveHigherBound)
@@ -234,12 +258,14 @@ public class Shooter{
         mHasCorrectSpeed = false;
     }
 
+    
+
     public void logShooterInformation()
     {
         SmartDashboard.putNumber("Shooter: Top Shooter Velocity", mTopShooterRoller.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Shooter: Bottom Shooter Velocity", mBottomShooterRoller.getVelocity().getValueAsDouble());
-        SmartDashboard.putNumber("Shooter: Constant Top Shooter Speed", Constants.SHOOTER_TOP_DEFAULT_SPEED);
-        SmartDashboard.putNumber("Shooter: Constant Bottom Shooter Speed", Constants.SHOOTER_BOTTOM_DEFAULT_SPEED);
+        SmartDashboard.putNumber("Shooter: Constant Top Shooter Speed", Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED);
+        SmartDashboard.putNumber("Shooter: Constant Bottom Shooter Speed", Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
         SmartDashboard.putNumber("Shooter: Time Elapsed Since Shooter Reached Right Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
     }   
 

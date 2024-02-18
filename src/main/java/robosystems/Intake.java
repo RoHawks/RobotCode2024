@@ -4,8 +4,10 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.SparkAnalogSensor.Mode;
+import com.revrobotics.SparkLimitSwitch.Type;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAnalogSensor;
 
@@ -39,6 +41,12 @@ public class Intake {
         returnValue.setIdleMode(IdleMode.kCoast);
         returnValue.setOpenLoopRampRate(1.0);
         returnValue.setInverted(pIsInverted);
+        returnValue.burnFlash();
+        returnValue.enableSoftLimit(SoftLimitDirection.kForward, false);
+        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, false);
+        returnValue.getForwardLimitSwitch(Type.kNormallyOpen).enableLimitSwitch(false);
+        returnValue.getReverseLimitSwitch(Type.kNormallyOpen).enableLimitSwitch(false);
+        
         returnValue.burnFlash();
         return returnValue;
     }
