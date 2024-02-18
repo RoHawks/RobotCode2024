@@ -7,6 +7,7 @@ import frc.robot.Constants;
 
 import robosystems.Shooter;
 import states.IntakingState.IntakeMode;
+import robosystems.ExtendoArm;
 import robosystems.Intake;
 
 import universalSwerve.SwerveDrive;
@@ -17,14 +18,19 @@ public class ShootingState extends AState {
     private SwerveDrive mSwerveDrive;
     private Intake mIntake;
     private Shooter mShooter;
+    private ExtendoArm mExtendoArm;
     private Controls mControls;
 
     private ShooterMode mShooterMode;
+    private double mTimeStartedToShoot;
+
+    private boolean mHasShot;
 
     public ShootingState(
         SwerveDrive pSwerveDrive,
         Intake pIntake,
         Shooter pShooter,
+        ExtendoArm pExtendoArm,
         Controls pControls
         )
         {
@@ -32,8 +38,10 @@ public class ShootingState extends AState {
             mIntake = pIntake;
             mShooter = pShooter;
             mControls = pControls;   
-
-            mShooterMode = ShooterMode.Undefined;
+            mExtendoArm = pExtendoArm;
+            mShooterMode = ShooterMode.HighGoalDriveBy;
+            mTimeStartedToShoot = -1;
+            mHasShot = false;
         }
         
     /**
@@ -43,32 +51,59 @@ public class ShootingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        // mSwerveDrive.Run(mControls);
+        mSwerveDrive.Run(mControls);
+        logShootingStateInformation();
+        checkForShootingPreperationButtons();
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
-        mIntake.setToNormalIntakingSpeed();
-        if (mShooterMode == ShooterMode.LowGoal || mShooterMode == ShooterMode.HighGoalManual)
+        
+        mShooter.spinUpToCorrectSpeed();
+
+        if (mShooterMode == ShooterMode.LowGoal)
         {
-            mShooter.shootAtDefaultSpeed();
+            mExtendoArm.lowGoalExtension();
+        }
+        else if (mShooterMode == ShooterMode.HighGoalManual)
+        {
+            mExtendoArm.retract();
         }
         else if (mShooterMode == ShooterMode.AutoAim)
         {
-
+            mExtendoArm.retract();
         } 
         else if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
-
+            mExtendoArm.retract();
         }
 
+        boolean inLowGoalAndExtendedFarEnough = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
+        
+        if (mShooter.checkIfPersistentlyHasCorrectSpeed()
+            && inLowGoalAndExtendedFarEnough)
+        {
+            if (!mHasShot)
+            {
+                mHasShot = true;
+                mTimeStartedToShoot = System.currentTimeMillis();
+            } 
+            mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+        }
+        else
+        {
+            mIntake.setToHoldingSpeed();
+        }
+        
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
-        checkForShootingPreperationButtons();
+        
         
     
         if(mControls.GetForceIntakingMode())
         {
-            return new NextStateInfo(States.Intaking);
+            return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
-        if (this.GetTimeSinceEntry() > 3000)
+        SmartDashboard.putNumber("Shooting: Time Elapsed Since Shooting", System.currentTimeMillis() - mTimeStartedToShoot);
+
+        if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > 3000)
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
@@ -99,6 +134,13 @@ public class ShootingState extends AState {
         }
     }
 
+    public void logShootingStateInformation()
+    {
+        SmartDashboard.putString("Shooting: Shooting Mode", mShooterMode.name());
+        SmartDashboard.putBoolean("Persistently at Speed", mShooter.checkIfPersistentlyHasCorrectSpeed());
+        mShooter.logShooterInformation();
+    }
+
   
 
     protected void EnterState(Object pEntryParameter)
@@ -106,17 +148,21 @@ public class ShootingState extends AState {
         super.EnterState(pEntryParameter);
         //For normal usage
         mShooterMode = (ShooterMode) pEntryParameter;
+        mTimeStartedToShoot = -1;
         
+        mHasShot = false;
     }
+
+    
 
     @Override
     protected States GetState() {
-        return States.Intaking;
+        return States.Shooting;
     }
 
     @Override
     protected String GetName() {
-        return "Intaking";
+        return "Shooting";
     }
     
 }

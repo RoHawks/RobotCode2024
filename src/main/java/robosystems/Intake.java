@@ -1,5 +1,7 @@
 package robosystems;
 
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -23,6 +25,9 @@ public class Intake {
     {
         TalonFX returnValue = new TalonFX(pDeviceID);
         returnValue.setInverted(pIsInverted);
+        OpenLoopRampsConfigs rampsConfigs = new OpenLoopRampsConfigs();
+        rampsConfigs.VoltageOpenLoopRampPeriod = 0.3;
+        returnValue.getConfigurator().apply(rampsConfigs);
         return returnValue;
     }
 
@@ -80,6 +85,14 @@ public class Intake {
                   Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 
                   Constants.NORMAL_INTAKING_SPEED_INTAKE_ROLLER);
     }
+
+    public void setToLaunchingNoteIntoTheShooterSpeed() 
+    {
+        setSpeeds(Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 
+                  Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 
+                  Constants.INTAKE_ROLLERS_GENTLE_ROLLING_BACKWARDS_SPEED);
+    }
+
     public void setWholeIntakeSpeed(double pSpeed) 
     {
         setSpeeds(pSpeed);

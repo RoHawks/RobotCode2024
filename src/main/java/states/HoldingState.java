@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 import robosystems.Shooter;
+import robosystems.ExtendoArm;
 import robosystems.Intake;
 
 import universalSwerve.SwerveDrive;
@@ -16,6 +17,7 @@ public class HoldingState extends AState {
     private SwerveDrive mSwerveDrive;
     private Intake mIntake;
     private Shooter mShooter;
+    private ExtendoArm mExtendoArm;
     private Controls mControls;
 
     private HoldingMode mHoldingMode; // ARGH everything else is ShooterMode IntakeMode this naming convention DOESNT WORK for HoldingMode 
@@ -27,11 +29,12 @@ public class HoldingState extends AState {
         Holding,
         Ejecting
     }
-
+    
     public HoldingState(
         SwerveDrive pSwerveDrive,
         Intake pIntake,
         Shooter pShooter,
+        ExtendoArm pExtendoArm,
         Controls pControls
         )
         {
@@ -39,8 +42,9 @@ public class HoldingState extends AState {
             mIntake = pIntake;
             mShooter = pShooter;
             mControls = pControls;   
+            mExtendoArm = pExtendoArm;
             mHoldingMode = HoldingMode.Holding;
-            mShooterMode = ShooterMode.Undefined;
+            mShooterMode = ShooterMode.HighGoalDriveBy;
         }
         
     protected void determineCurrentState()
@@ -81,9 +85,15 @@ public class HoldingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        //mSwerveDrive.Run(mControls);
+        mSwerveDrive.Run(mControls);
+        logHoldingStateValues();
+        mExtendoArm.retract();
+        mShooter.checkIfPersistentlyHasCorrectSpeed();
+        mShooter.logShooterInformation();
+
+
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
-        mShooter.shootAtDefaultSpeed();
+        
         determineCurrentState();
 
         if (mIntake.getBreakBeamStatus())
@@ -98,10 +108,12 @@ public class HoldingState extends AState {
         else if (mHoldingMode == HoldingMode.Holding)
         {
             mIntake.setToHoldingSpeed();
+            mShooter.spinUpToCorrectSpeed();
         }
         else if (mHoldingMode == HoldingMode.Ejecting)
         {
             mIntake.setToEjectingSpeed();
+            return new NextStateInfo(States.Intaking, mShooterMode);
         } 
 
         
@@ -111,7 +123,7 @@ public class HoldingState extends AState {
 
         if(mControls.GetForceIntakingMode())
         {
-            return new NextStateInfo(States.Intaking);
+            return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
         if (mControls.GetStartShootingSequence())
@@ -150,6 +162,7 @@ public class HoldingState extends AState {
         super.EnterState(pEntryParameter);
         //For normal usage
         mShooterMode = (ShooterMode) pEntryParameter;
+        mShooter.resetForHoldingState();
         
     }
 

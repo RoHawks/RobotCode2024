@@ -40,14 +40,13 @@ public class ExtendoArm {
         returnValue.burnFlash();
         return returnValue;
     }
+    
 
 
     // Constructor
     public ExtendoArm() {
         mExtendoMotor =  CreateExtendoArmsMotor(7,false);
         mExtendoEncoder = mExtendoMotor.getEncoder(Type.kQuadrature, 1);
-
-        
     }
 
     public void goToPosition(double pPosition)
@@ -60,6 +59,16 @@ public class ExtendoArm {
     public void lowGoalExtension() 
     {
         goToPosition(LOW_GOAL_TARGET);
+    }
+
+    private boolean hasReachedPosition(double pPosition)
+    {
+        return Math.abs(mExtendoEncoder.getPosition() - pPosition) < 100;
+    }
+
+    public boolean hasReachedLowGoal()
+    {
+        return hasReachedPosition(LOW_GOAL_TARGET);
     }
 
     // Extend arm until it gets to TRAP_TARGET

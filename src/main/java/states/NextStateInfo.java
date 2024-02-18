@@ -5,11 +5,11 @@ public class NextStateInfo
     private States mNextState;
     private Object mNextStateParameter;
 
-    public NextStateInfo(States pNextState)
-    {
-        mNextState = pNextState;
-        mNextStateParameter = null;
-    }
+    // public NextStateInfo(States pNextState)
+    // {
+    //     mNextState = pNextState;
+    //     mNextStateParameter = null;
+    // }
     
     public NextStateInfo(States pNextState, Object pNextStateParameter)
     {

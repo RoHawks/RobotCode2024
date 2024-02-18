@@ -10,8 +10,10 @@ import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
+import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.SparkLimitSwitch.Type;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
@@ -53,6 +55,12 @@ public class Shooter{
     private CANSparkFlex mAnglerMotor;
     private PositionVoltage mPositionVoltage;
 
+    private SparkLimitSwitch mHardForwardLimitSwitch;
+    private SparkLimitSwitch mHardReverseLimitSwitch;
+
+    private boolean mHasCorrectSpeed;
+    private double mShooterAtRightSpeedStartingTime;
+    
     private boolean shootingFinished;
     private SparkPIDController mPIDController;
 
@@ -94,18 +102,28 @@ public class Shooter{
         returnValue.setInverted(pIsInverted);
         returnValue.setSoftLimit(SoftLimitDirection.kForward, 190);
         returnValue.setSoftLimit(SoftLimitDirection.kReverse, 10);
-        returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
-        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
+        returnValue.enableSoftLimit(SoftLimitDirection.kForward, false);
+        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, false);
 
         returnValue.getPIDController().setP(0.08);
         returnValue.getPIDController().setI(0.00);
         returnValue.getPIDController().setD(0.00);
         returnValue.getPIDController().setFF(0.00);
 
+        mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyOpen);
+        mHardReverseLimitSwitch = returnValue.getReverseLimitSwitch(Type.kNormallyOpen);
+        mHardForwardLimitSwitch.enableLimitSwitch(true);
+        mHardReverseLimitSwitch.enableLimitSwitch(true);
+        
+        // mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyClosed);
+        // mHardReverseLimitSwitch = returnValue.getReverseLimitSwiotch(Type.kNormallyClosed);
+        // mHardForwardLimitSwitch.enableLimitSwitch(true);
+        // mHardForwardLimitSwitch.enableLimitSwitch(true);
 
         returnValue.burnFlash();
         return returnValue;
     }
+
 
     public Shooter() // initialization method
     {
@@ -114,9 +132,10 @@ public class Shooter{
         mBottomShooterRoller = CreateShooterMotor(5, false);
 
         mPIDController = mAnglerMotor.getPIDController();
-       
-
         shootingFinished = true;
+
+        mHasCorrectSpeed = false;
+        mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
         
     }
 
@@ -128,8 +147,26 @@ public class Shooter{
 
         // shootingFinished = (speed == 0.0);
     }
+
+    public void setAnglerSpeed(double pSpeed)
+    {
+        mAnglerMotor.set(pSpeed);
+    }
     
-    public void shootAtDefaultSpeed()
+    public void zeroAnglerMotorInformation()
+    {
+        mAnglerMotor.getEncoder().setPosition(0);
+        mAnglerMotor.enableSoftLimit(SoftLimitDirection.kForward, true);
+        mAnglerMotor.enableSoftLimit(SoftLimitDirection.kReverse, true);
+        mAnglerMotor.burnFlash();
+    }
+
+    public boolean isAnglerHardReverseLimitSwitchPressed()
+    {
+        return mHardReverseLimitSwitch.isPressed();
+    }
+
+    public void spinUpToCorrectSpeed()
     {
         setSpeed(Constants.SHOOTER_TOP_DEFAULT_SPEED, Constants.SHOOTER_BOTTOM_DEFAULT_SPEED);
     }
@@ -139,6 +176,73 @@ public class Shooter{
         mBottomShooterRoller.set(mMoveBackwardsSpeed);
     }
     
+    private double getTopShooterVelocity()
+    {
+        return -mTopShooterRoller.getVelocity().getValueAsDouble();
+    }
+
+    public boolean checkIfPersistentlyHasCorrectSpeed()
+    {
+         // Should be a global variable at the beginning
+        double lowerPercent = 0.8;
+        double higherPercent = 1.2;
+
+        boolean bothShootersAreAboveLowerBound = getTopShooterVelocity()
+            > Constants.SHOOTER_TOP_DEFAULT_SPEED * lowerPercent && 
+            mBottomShooterRoller.getVelocity().getValueAsDouble() 
+            > Constants.SHOOTER_BOTTOM_DEFAULT_SPEED * lowerPercent;
+
+        boolean bothShootersAreAboveHigherBound = getTopShooterVelocity()
+            < Constants.SHOOTER_TOP_DEFAULT_SPEED * higherPercent && 
+            mBottomShooterRoller.getVelocity().getValueAsDouble() 
+            < Constants.SHOOTER_BOTTOM_DEFAULT_SPEED * higherPercent;
+
+        if (bothShootersAreAboveLowerBound && 
+            bothShootersAreAboveHigherBound)
+        {
+            SmartDashboard.putNumber("Time Elapsed Since Reached Right Shooting Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
+            if (!mHasCorrectSpeed)
+            {
+                mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
+                mHasCorrectSpeed = true;
+                return false;
+            }
+            else
+            {
+                mHasCorrectSpeed = true;
+                if (System.currentTimeMillis() - mShooterAtRightSpeedStartingTime > 1000)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+        }
+        else
+        {
+            SmartDashboard.putNumber("Time Elapsed Since Reached Right Shooting Speed", -1);
+            mHasCorrectSpeed = false;
+            return false;
+        }
+    }
+
+    public void resetForHoldingState()
+    {
+        mHasCorrectSpeed = false;
+    }
+
+    public void logShooterInformation()
+    {
+        SmartDashboard.putNumber("Shooter: Top Shooter Velocity", mTopShooterRoller.getVelocity().getValueAsDouble());
+        SmartDashboard.putNumber("Shooter: Bottom Shooter Velocity", mBottomShooterRoller.getVelocity().getValueAsDouble());
+        SmartDashboard.putNumber("Shooter: Constant Top Shooter Speed", Constants.SHOOTER_TOP_DEFAULT_SPEED);
+        SmartDashboard.putNumber("Shooter: Constant Bottom Shooter Speed", Constants.SHOOTER_BOTTOM_DEFAULT_SPEED);
+        SmartDashboard.putNumber("Shooter: Time Elapsed Since Shooter Reached Right Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
+    }   
+
     public void setAngleBasedOnShooterMode(ShooterMode pShooterMode)
     {
         if (pShooterMode == ShooterMode.LowGoal)

@@ -3,7 +3,7 @@ package states;
 import universalSwerve.controls.ISwerveControls;
 import universalSwerve.utilities.SwerveNudgingDirection;
 
-public interface Controls
+public interface Controls extends ISwerveControls
 {
     public boolean GetForceIntakingMode();
     public boolean GetForceEjectionMode();
@@ -16,7 +16,7 @@ public interface Controls
     public boolean GetStartShootingSequence();
 
 
-    public boolean GetTrackScoringAngle();
+    
     public double GetSwerveXComponent();
     public double GetSwerveYComponent();
     public double GetSwerveLinearSpeed();
@@ -26,15 +26,6 @@ public interface Controls
     public boolean GetSwerveModeSwitch();
 
     public boolean GetManualControlsMode();
-
-    public enum SwerveNudgingDirection
-    {
-        NONE,
-        NORTH,
-        SOUTH,
-        EAST,
-        WEST
-    }
 
     public universalSwerve.utilities.SwerveNudgingDirection GetSwerveNudgingDirection();
 

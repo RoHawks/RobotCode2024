@@ -14,7 +14,9 @@ import states.HoldingState;
 import states.IntakingState;
 import states.NextStateInfo;
 import states.ShootingState;
+import states.StateMachine;
 import states.TestControls;
+import states.TestControlsWithSwerve;
 import edu.wpi.first.wpilibj.XboxController;
 
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -42,7 +44,7 @@ import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.revrobotics.SparkRelativeEncoder.Type;
+import com.revrobotics.SparkLimitSwitch.Type;
 
 
 /**
@@ -59,10 +61,13 @@ public class Robot extends TimedRobot
   private Intake mIntake;
   private Shooter mShooter;
 
+  
+  private boolean mAnglerMotorZeroingHasOccurred;
   private IntakingState mIntakingState;
   private HoldingState mHoldingState;
   private ShootingState mShootingState;
 
+  private StateMachine mStateMachine;
 
   private XboxController mMainController;
 
@@ -113,17 +118,23 @@ public class Robot extends TimedRobot
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
+  CANSparkFlex mAnglerMotor; 
   @Override
   public void robotInit() {
+    mMainController = new XboxController(0);
+  
 
-    
+    mAnglerMotorZeroingHasOccurred = false;
     CreateMainComponents();
     CreateControls();
 
-    TestControls testControls = new TestControls(mMainController);
-    mIntakingState = new IntakingState(mSwerveDrive, mIntake, mShooter, testControls);
-    mHoldingState = new HoldingState(mSwerveDrive, mIntake, mShooter, testControls);
-    mShootingState = new ShootingState(mSwerveDrive, mIntake, mShooter, testControls);
+    XboxController alternateController = new XboxController(1);
+    TestControlsWithSwerve testControls = new TestControlsWithSwerve(mMainController, alternateController);
+    mStateMachine = new StateMachine(testControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, null);
+    // mIntakingState = new IntakingState(mSwerveDrive, mIntake, mShooter, testControls);
+    // mHoldingState = new HoldingState(mSwerveDrive, mIntake, mShooter, testControls);
+    // mShootingState = new ShootingState(mSwerveDrive, mIntake, mShooter, testControls);
+    
   }
 
   /*
@@ -176,7 +187,7 @@ public class Robot extends TimedRobot
   public void teleopInit() {
     
   }
-
+  {
   /*
   private void AnglerSimplePID()
   {
@@ -293,7 +304,7 @@ public class Robot extends TimedRobot
     mSwerveDrive.Run(mJoystickSwerveControls);
   }
   */
-
+  }
   private void TestAngler()
   {    
       double setpoint = 60;//meaningless default
@@ -428,10 +439,12 @@ public class Robot extends TimedRobot
     if (mMainController.getYButton())
     {
       return mHoldingState.Run();
+      
     }
     else
     {
       mIntake.stopMotors();
+      mShooter.setSpeed(0, 0);
       return null;
       
     }
@@ -464,18 +477,45 @@ public class Robot extends TimedRobot
     }
   }
 
+  public void zeroAnglerEncoder()
+  {
+    // SmartDashboard.putBoolean("Limit Reached", mAnglerHardReverseLimitSwitch.isPressed());
+    // SmartDashboard.putNumber("Angler Pos", mAnglerMotor.getEncoder().getPosition());
+    
+    if (!mAnglerMotorZeroingHasOccurred)
+    {
+      mShooter.setAnglerSpeed(-0.05);
+
+    
+      if (mShooter.isAnglerHardReverseLimitSwitchPressed())
+      {
+        mAnglerMotorZeroingHasOccurred = true;
+        mShooter.setAnglerSpeed(0);
+        mShooter.zeroAnglerMotorInformation();
+      }
+    }
+    else
+    {
+      SmartDashboard.putString("Status","Not Here");
+    }
+  }
+
+
+
+  private double mPosition = -800;
   public void teleopPeriodic()
   {
-    //TestAngler();
-    // NextStateInfo x = testHoldingState();
-    // if (x != null)
-    // {
-    //   SmartDashboard.putString("Next State", x.GetNextState().toString());
-    // }
-    // mHoldingState.logHoldingStateValues();
-    // mIntakingState.logIntakingStateValues();
-    testDriveTrainAndIntake();
-
+    if (!mAnglerMotorZeroingHasOccurred)
+    {
+      zeroAnglerEncoder();
+      return;
+    }
+  
+    
+    mStateMachine.Run();
+    
+    
+    
   }
 
   /** This function is called once when the robot is disabled. */

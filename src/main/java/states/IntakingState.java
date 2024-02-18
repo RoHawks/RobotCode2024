@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 import robosystems.Shooter;
+import robosystems.ExtendoArm;
 import robosystems.Intake;
 
 import universalSwerve.SwerveDrive;
@@ -16,6 +17,7 @@ public class IntakingState extends AState {
     private SwerveDrive mSwerveDrive;
     private Intake mIntake;
     private Shooter mShooter;
+    private ExtendoArm mExtendoArm;
     private Controls mControls;
 
     private IntakeMode mIntakeMode;
@@ -31,15 +33,17 @@ public class IntakingState extends AState {
         SwerveDrive pSwerveDrive,
         Intake pIntake,
         Shooter pShooter,
+        ExtendoArm pExtendoArm,
         Controls pControls
         )
         {
             mSwerveDrive = pSwerveDrive;
             mIntake = pIntake;
             mShooter = pShooter;
+            mExtendoArm = pExtendoArm;
             mControls = pControls;   
             mIntakeMode = IntakeMode.NormalIntaking;
-            mShooterMode = ShooterMode.Undefined;
+            mShooterMode = ShooterMode.HighGoalDriveBy;
         }
     
     
@@ -56,9 +60,12 @@ public class IntakingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-    //    mSwerveDrive.Run(mControls);
+        mSwerveDrive.Run(mControls);
+        logIntakingStateValues();
         mShooter.setAngleToIntakingAngle();
-
+        mShooter.setSpeed(0,0);
+        mExtendoArm.retract();
+        
         if (mIntakeMode == IntakeMode.NormalIntaking)
         {
             mIntake.setToNormalIntakingSpeed();
@@ -93,7 +100,7 @@ public class IntakingState extends AState {
         }
         else
         {
-            return new NextStateInfo(States.Intaking);
+            return new NextStateInfo(States.Intaking, mShooterMode);
         }
     }
 

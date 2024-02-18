@@ -1,6 +1,8 @@
 package states;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import universalSwerve.utilities.SwerveNudgingDirection;
 
 public class TestControls implements Controls {
 
@@ -28,6 +30,7 @@ public class TestControls implements Controls {
 
     @Override
     public boolean GetPrepareForHighGoalDriveBy() {
+        SmartDashboard.putBoolean("High Goal Drive", mController.getXButton());
         return mController.getXButton();
     }
 
@@ -47,11 +50,6 @@ public class TestControls implements Controls {
         return mController.getBButton();
     }
 
-    @Override
-    public boolean GetTrackScoringAngle() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'GetTrackScoringAngle'");
-    }
 
     @Override
     public double GetSwerveXComponent() {
@@ -96,7 +94,7 @@ public class TestControls implements Controls {
     }
 
     @Override
-    public universalSwerve.utilities.SwerveNudgingDirection GetSwerveNudgingDirection() {
+    public SwerveNudgingDirection GetSwerveNudgingDirection() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'GetSwerveNudgingDirection'");
     }
@@ -129,6 +127,18 @@ public class TestControls implements Controls {
     public void TurnOffVibrate() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'TurnOffVibrate'");
+    }
+
+    @Override
+    public boolean GetTrackSpecificAngle() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'GetTrackSpecificAngle'");
+    }
+
+    @Override
+    public double GetSpecificAngleToTrack() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'GetSpecificAngleToTrack'");
     }
     
 }
