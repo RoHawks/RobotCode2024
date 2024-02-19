@@ -1,9 +1,11 @@
 package states;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
@@ -45,11 +47,20 @@ public class ShootingState extends AState {
             mTimeStartedToShoot = -1;
             mHasShot = false;
         }
+       
         
+    private double CENTER_POINT = -0.29;
+    private double ADJUSTMENT_RATIO_FOR_DRIVING = ((0.2) / 4.5) * 5;
     /**
      * Runs the intake. <br><br>
      * Ejection will only work while the button is held, and will go back to normal intaking if released
      */
+
+    private double getAdjustedCenterFromChassisSpeed(ChassisSpeeds pChassisSpeeds)
+    {
+        return CENTER_POINT +  -(pChassisSpeeds.vyMetersPerSecond * ADJUSTMENT_RATIO_FOR_DRIVING);
+    }
+
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
@@ -86,28 +97,59 @@ public class ShootingState extends AState {
         }
 
         boolean highGoalDriveByExtensionConditonsMet = true;
+
+        double value = -1;
         if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
-            // NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-            // NetworkTableEntry jsonNTE = table.getEntry("json");
-            // double[] cameraPositionInTargetSpace = Functionality.getCameraPoseTargetSpace(jsonNTE.getString(null));  
-            // double distanceInYAndZ = Math.sqrt(
-            //     Math.pow(cameraPositionInTargetSpace[1], 2) +
-            //     Math.pow(cameraPositionInTargetSpace[2], 2));
-            // highGoalDriveByExtensionConditonsMet = Math.abs(distanceInYAndZ - Constants.DRIVE_BY_SHOOTNG_DISTANCE) < 0;
+            
+            try
+            {
+                NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+                NetworkTableEntry jsonNTE = table.getEntry("json");
+                double[] cameraPositionInTargetSpace = Functionality.getCameraPoseTargetSpace(jsonNTE.getString(null));  
+                value = cameraPositionInTargetSpace[0];
+                SmartDashboard.putNumber("Continous Value", value);
+
+                double adjustedCenter;
+                ChassisSpeeds chassisSpeeds = mSwerveDrive.getLastRequestedChassisSpeeds();
+                if (chassisSpeeds == null)
+                {
+                    adjustedCenter = CENTER_POINT;
+                }
+                else
+                {
+                    adjustedCenter = getAdjustedCenterFromChassisSpeed(chassisSpeeds);
+                }
+
+                SmartDashboard.putNumber("Adjusted Center Point", adjustedCenter);
+
+                highGoalDriveByExtensionConditonsMet = Math.abs(cameraPositionInTargetSpace[0] - adjustedCenter) < Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN; 
+                highGoalDriveByExtensionConditonsMet = highGoalDriveByExtensionConditonsMet && mShooter.getIfAutomaticAnglerInRange();
+
+            }
+            catch (Exception e)
+            {
+                SmartDashboard.putNumber("Error 2",System.currentTimeMillis());
+                highGoalDriveByExtensionConditonsMet = false;
+            }// double distanceInXAndZ = Math.sqrt(
         }
-        else{
 
-        }
-
-
+        
         boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
        
-        if (mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode)
-            && lowGoalExtensionConditionsMet)
+
+        boolean specialTestVariableToEnableShooting = true;
+        if (
+            ((mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode)
+            && lowGoalExtensionConditionsMet
+            && highGoalDriveByExtensionConditonsMet)
+            || mHasShot) 
+            && specialTestVariableToEnableShooting
+            )
         {
             if (!mHasShot)
             {
+                SmartDashboard.putNumber("Distance first sees the value", value);
                 mHasShot = true;
                 mTimeStartedToShoot = System.currentTimeMillis();
                 if (mShooterMode == ShooterMode.HighGoalManual)

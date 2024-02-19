@@ -18,6 +18,7 @@ import com.revrobotics.SparkLimitSwitch.Type;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
+import frc.robot.Functionality;
 import states.ShooterMode; 
 
 /*
@@ -65,11 +66,11 @@ public class Shooter{
     private boolean shootingFinished;
     private SparkPIDController mPIDController;
 
-    private final double mMoveBackwardsSpeed = -0.3;
+    private final double mMoveBackwardsSpeed = -0.2;
 
     private final double AUTOMATIC_SHOOTING_ANGLE = 50;
 
-    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, false, false, false);
+    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, false, false, false);
   
 
     private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted)
@@ -113,7 +114,7 @@ public class Shooter{
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, false);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, false);
 
-        returnValue.getPIDController().setP(0.08);
+        returnValue.getPIDController().setP(0.12);
         returnValue.getPIDController().setI(0.00);
         returnValue.getPIDController().setD(0.00);
         returnValue.getPIDController().setFF(0.00);
@@ -150,9 +151,24 @@ public class Shooter{
     
 
     public void setSpeed(double topSpeed, double bottomSpeed){ //set speed to integer -1.0 <= n <= 1.0
-        mTopShooterRoller.setControl(mVoltageVelocity.withVelocity(-topSpeed));
-        mBottomShooterRoller.setControl(mVoltageVelocity.withVelocity(bottomSpeed));
+        if (Math.abs(topSpeed) > 0.01)
+        {
+            mTopShooterRoller.setControl(mVoltageVelocity.withVelocity(-topSpeed));
+        }
+        else
+        {
+            mTopShooterRoller.stopMotor();
+        }
 
+        if (Math.abs(bottomSpeed) > 0.01)
+        {
+            mBottomShooterRoller.setControl(mVoltageVelocity.withVelocity(bottomSpeed));
+        }
+        else
+        {
+            mBottomShooterRoller.stopMotor();
+        }
+        
         // shootingFinished = (speed == 0.0);
     }
 
@@ -184,14 +200,16 @@ public class Shooter{
     }
 
     public void backingUpNoteToPreventFallingOut(){ // to prevent note escape
-        mTopShooterRoller.set(mMoveBackwardsSpeed);
-        mBottomShooterRoller.set(mMoveBackwardsSpeed);
+        mTopShooterRoller.set(-mMoveBackwardsSpeed);
+        mBottomShooterRoller.set(-mMoveBackwardsSpeed);
     }
     
     private double getTopShooterVelocity()
     {
         return -mTopShooterRoller.getVelocity().getValueAsDouble();
     }
+
+
 
     public boolean checkIfPersistentlyHasCorrectSpeed(ShooterMode pShooterMode)
     {
@@ -258,7 +276,7 @@ public class Shooter{
         mHasCorrectSpeed = false;
     }
 
-    
+
 
     public void logShooterInformation()
     {
@@ -275,10 +293,13 @@ public class Shooter{
         {
             setAngle(Constants.LOW_GOAL_ANGLE);
         }
-        else if (pShooterMode == ShooterMode.HighGoalManual || 
-                 pShooterMode == ShooterMode.HighGoalDriveBy)
+        else if (pShooterMode == ShooterMode.HighGoalManual)
         {
             setAngle(Constants.HIGH_GOAL_ANGLE);
+        }
+        else if (pShooterMode == ShooterMode.HighGoalDriveBy)
+        {
+            automaticAngle();
         }
         else if (pShooterMode == ShooterMode.AutoAim)
         {
@@ -287,11 +308,80 @@ public class Shooter{
         
     }
 
+
+
+    /**
+     * Returns a boolean of if it's within an acceptable degree of what angle it wants to be in
+     * @return
+     */
     public void automaticAngle() 
     {
-        setAngle(AUTOMATIC_SHOOTING_ANGLE);
+        double[] limelightInfo = Functionality.getLimeLightInfo();
+        if (limelightInfo == null)
+        {
+            setAngle(Constants.DEFAULT_AUTO_AIM_ANGLE);
+          
+        } 
+        else
+        {
+            double yDisplacement = limelightInfo[1];
+
+            double zDisplacement = -1 * limelightInfo[2];
+
+            // SmartDashboard.putNumber("zDisplacement", zDisplacement);
+
+            double adjustedYDisplacement = yDisplacement * (83.0/57.0);
+
+            // SmartDashboard.putNumber("adjustedYDisplacement ", adjustedYDisplacement );
+
+            double adjustedZDisplacement = zDisplacement + (0.36);
+
+            // SmartDashboard.putNumber("adjustedZDisplacement ", adjustedZDisplacement );
+            
+            double angleToTheShooter = Math.toDegrees(Math.atan2(adjustedYDisplacement, adjustedZDisplacement));
+            
+            // SmartDashboard.putNumber("angleToTheShooter ", angleToTheShooter );
+            
+            angleToTheShooter = angleToTheShooter - 13.5;
+
+
+            angleToTheShooter = angleToTheShooter * (1.0 / Constants.ANGLER_ROTATIONS_TO_ANGLES);
+
+            // angleToTheShooter = ((angleToTheShooter - 50.0) * 0.625) + 50;
+
+            SmartDashboard.putNumber("Angle to shoot at", angleToTheShooter);
+            setAngle(angleToTheShooter);
+            
+        }
 
     }
+
+    public boolean getIfAutomaticAnglerInRange()
+    {
+        double[] limelightInfo = Functionality.getLimeLightInfo();
+        if (limelightInfo == null)
+        {
+            return false;
+        }
+
+        double yDisplacement = limelightInfo[1];
+        double zDisplacement = -1 * limelightInfo[2];
+        double adjustedYDisplacement = yDisplacement * (83.0/57.0);
+        double adjustedZDisplacement = zDisplacement + (0.36);
+        double angleToTheShooter = Math.toDegrees(Math.atan2(adjustedYDisplacement, adjustedZDisplacement));
+        angleToTheShooter = angleToTheShooter - 13.5;
+        angleToTheShooter = angleToTheShooter * (1.0 / Constants.ANGLER_ROTATIONS_TO_ANGLES);
+        if (Math.abs(angleToTheShooter - mAnglerMotor.getEncoder().getPosition()) < Constants.ANGLER_ACCEPTABLE_ERROR)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+
     public void setAngle(double pDesiredPosition) //needs to be implemented
     {
         mAnglerMotor.getPIDController().setReference(pDesiredPosition, ControlType.kPosition);

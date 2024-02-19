@@ -29,7 +29,8 @@ public class TestControlsWithSwerve implements Controls {
 
     @Override
     public boolean GetPrepareForHighGoalManual() {
-        return false;
+        return mAlternateController.getLeftBumper();
+     
     }
 
     @Override

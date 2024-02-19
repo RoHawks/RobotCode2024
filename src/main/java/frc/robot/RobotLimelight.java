@@ -144,6 +144,7 @@ public class RobotLimelight extends TimedRobot {
 
 
     NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+
     NetworkTableEntry jsonNTE = table.getEntry("json");
     String json_dump = jsonNTE.getString("null");
 

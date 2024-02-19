@@ -68,7 +68,15 @@ public class IntakingState extends AState {
         
         if (mIntakeMode == IntakeMode.NormalIntaking)
         {
-            mIntake.setToNormalIntakingSpeed();
+            
+            if (GetTimeSinceEntry() < 1000)
+            {
+                mIntake.setToHoldingSpeed();
+            }
+            else
+            {
+                mIntake.setToNormalIntakingSpeed();
+            } 
         }
         else if (mIntakeMode == IntakeMode.Ejecting)
         {
@@ -76,6 +84,18 @@ public class IntakingState extends AState {
         } 
         
         
+        if (GetTimeSinceEntry() < 1000)
+        {
+            mShooter.setSpeed(0, 0);
+            
+        }
+        else
+        {
+            mShooter.backingUpNoteToPreventFallingOut();
+        }
+
+        
+
         if (mControls.GetForceEjectionMode())
         {
             setIntakingMode(IntakeMode.Ejecting);

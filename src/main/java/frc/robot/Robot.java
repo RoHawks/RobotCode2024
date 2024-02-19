@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.DigitalOutput;
 import universalSwerve.SwerveDrive;
 import universalSwerve.controls.JoystickSwerveControls;
 import universalSwerve.SwerveFactory;
+import universalSwerve.components.WheelLabel;
 
 import java.lang.Thread.State;
 import java.util.Arrays;
@@ -188,7 +189,11 @@ public class Robot extends TimedRobot
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    
+    mSwerveDrive.EnableDiagnostics();
+    mSwerveDrive.EnableDiagnostics(WheelLabel.NE);
+    mSwerveDrive.EnableDiagnostics(WheelLabel.NW);
+    mSwerveDrive.EnableDiagnostics(WheelLabel.SE);
+    mSwerveDrive.EnableDiagnostics(WheelLabel.SW);
   }
   {
   /*
@@ -482,31 +487,40 @@ public class Robot extends TimedRobot
 
   public void logLimeLightInfo()
   {
-    NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-    NetworkTableEntry jsonNTE = table.getEntry("json");
-    String json_dump = jsonNTE.getString("null");
+    try {
 
-    double[] camerapose_targetspace = Functionality.getCameraPoseTargetSpace(json_dump);
-    if (camerapose_targetspace != null)
-    {
-      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
-      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
-      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
+      NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+      NetworkTableEntry jsonNTE = table.getEntry("json");
+      String json_dump = jsonNTE.getString("null");
 
-      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
-      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
-      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
-      SmartDashboard.putBoolean("Can See Tag", true);
+      double[] camerapose_targetspace = Functionality.getCameraPoseTargetSpace(json_dump);
+      if (camerapose_targetspace != null)
+      {
+        SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
+        SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
+        SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
+
+        SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
+        SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
+        SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
+        SmartDashboard.putNumber("Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
+        SmartDashboard.putBoolean("Can See Tag", true);
+      }
+      else
+      {
+        SmartDashboard.putNumber("X displacement", -1);
+        SmartDashboard.putNumber("Y displacement", -1);
+        SmartDashboard.putNumber("Z displacement", -1);
+        SmartDashboard.putNumber("Roll displacement", -1);
+        SmartDashboard.putNumber("Pitch displacement", -1);
+        SmartDashboard.putNumber("Yaw displacement", -1);
+        SmartDashboard.putBoolean("Can See Tag", false);
+        
+      }
     }
-    else
+    catch (Exception e)
     {
-      SmartDashboard.putNumber("X displacement", -1);
-      SmartDashboard.putNumber("Y displacement", -1);
-      SmartDashboard.putNumber("Z displacement", -1);
-      SmartDashboard.putNumber("Roll displacement", -1);
-      SmartDashboard.putNumber("Pitch displacement", -1);
-      SmartDashboard.putNumber("Yaw displacement", -1);
-      SmartDashboard.putBoolean("Can See Tag", false);
+      SmartDashboard.putString("Error", e.getLocalizedMessage());
     }
   }
 
@@ -536,6 +550,7 @@ public class Robot extends TimedRobot
   }
 
 
+  
 
 
   private double mPosition = -800;
@@ -544,19 +559,27 @@ public class Robot extends TimedRobot
     // SmartDashboard.putNumber("New Gyro Roll", mPigeon2.getRoll().getValueAsDouble());
     // SmartDashboard.putNumber("New Gyro Yaw", mPigeon2.getYaw().getValueAsDouble());
     // SmartDashboard.putNumber("New Gyro Pitch", mPigeon2.getPitch().getValueAsDouble());
-    // logLimeLightInfo();
+    logLimeLightInfo();
     // SmartDashboard.putNumber("New Gyro Angle", mPigeon2.getRoll().getValueAsDouble());
     if (!mAnglerMotorAndGyroZeroingHasOccurred)
     {
       zeroAnglerEncoderAndGyro();
       return;
     }
-  
     
+    
+    // mSwerveDrive.LogDiagnostics();
+    if (mSwerveDrive.getLastRequestedChassisSpeeds() != null)
+    {
+      SmartDashboard.putNumber("Last Rq Chassis Speeds VY", mSwerveDrive.getLastRequestedChassisSpeeds().vyMetersPerSecond);
+    }
+    else
+    {
+      SmartDashboard.putNumber("Last Rq Chassis Speeds VY", -1);
+    }
     mStateMachine.Run();
     
-    
-    
+  
   }
 
   /** This function is called once when the robot is disabled. */

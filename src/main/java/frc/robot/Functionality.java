@@ -2,6 +2,10 @@ package frc.robot;
 
 import com.revrobotics.CANSparkMax;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
 public class Functionality {
     public static void configureSparkMaxCustomizable(CANSparkMax pSparkMax, int pCurrentLimit, double pOpenLoopRampRate)
     {
@@ -55,6 +59,16 @@ public class Functionality {
        
       // }
       
+    }
+
+    public static double[] getLimeLightInfo()
+    {
+      NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+      NetworkTableEntry jsonNTE = table.getEntry("json");
+      String json_dump = jsonNTE.getString("null");
+
+      double[] camerapose_targetspace = Functionality.getCameraPoseTargetSpace(json_dump);
+      return camerapose_targetspace;
     }
     
 

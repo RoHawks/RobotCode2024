@@ -17,7 +17,9 @@ public class Constants {
     // Shooter Constants
     public static final double INTAKING_ANGLE = 20;
     public static final double LOW_GOAL_ANGLE = 55;
-    public static final double HIGH_GOAL_ANGLE = 50; //64
+    public static final double HIGH_GOAL_ANGLE = 64;
+
+    public static final double DEFAULT_AUTO_AIM_ANGLE = 45;
     
     public static final double SHOOTER_HIGH_TOP_DEFAULT_SPEED = 46.0; // 46.0
     public static final double SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED = 46.0 * 3.0/4.0; //46.0 * 3.0/4.0
@@ -26,11 +28,20 @@ public class Constants {
     public static final double SHOOTER_LOW_BOTTOM_DEFAULT_SPEED = 46.0 * 3.0/4.0 * 0.5; //46.0 * 3.0/4.0
 
     public static final double ANGLER_ROTATIONS_TO_ANGLES = 360.0 / 810.0; //360 degrees / ((27:1 gearbox) *(31:1 gearbox) (full revolution)) 
-    public static final double DRIVE_BY_SHOOTNG_DISTANCE = 50; // arbitrary
+    public static final double DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN = 0.12; // arbitrary
 
     
+    // public static final double 13.75/17.6
+
+
+
     public static double LOW_GOAL_ROTATION = 270;
     public static final double HIGH_GOAL_ROTATION = 0;
+    public static final double ANGLER_ACCEPTABLE_ERROR = 2.0;
+
+
+    
+
     public static void setLowGoalRotation()
     {
         try 

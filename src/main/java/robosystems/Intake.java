@@ -94,6 +94,7 @@ public class Intake {
                   Constants.NORMAL_INTAKING_SPEED_INTAKE_ROLLER);
     }
 
+
     public void setToLaunchingNoteIntoTheShooterSpeed() 
     {
         setSpeeds(Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 

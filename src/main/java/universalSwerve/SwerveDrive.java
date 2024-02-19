@@ -77,7 +77,7 @@ public class SwerveDrive
         mMaxRotationalSpeed = pMaxRotationalSpeed;
         mNudgingSpeed = pNudgingSpeed;
 
-        mAngleTrackController = new PIDController(0.02, 0, 0);
+        mAngleTrackController = new PIDController(0.1, 0, 0);
         mAngleTrackController.enableContinuousInput(0, 360);
         
         Initialize();
@@ -116,6 +116,7 @@ public class SwerveDrive
       return new ChassisSpeeds(twist.dx / dtSeconds, twist.dy / dtSeconds, twist.dtheta / dtSeconds);
     }
 
+    private ChassisSpeeds mLastRequestedChassisSpeeds;
     private SwerveModuleState[] CalculateModuleTargetStates(double linearSpeedFrontBackComponent, double linearSpeedLeftRightComponent, double requestedRotationalSpeed, double gyroAngle, DrivingStyle pDrivingStyle)
     {
         //First parameter is m/s forward, second is m/s to the left, third is radians/second counter clockwise
@@ -147,12 +148,16 @@ public class SwerveDrive
     
         if(USE_DISCRETIZER)
         {
+            mLastRequestedChassisSpeeds = discretize(requestedChassisSpeeds.vxMetersPerSecond, requestedChassisSpeeds.vyMetersPerSecond,
+                requestedChassisSpeeds.omegaRadiansPerSecond , 0.02);
+
             return mSwerveDriveKinematics.toSwerveModuleStates( 
                 discretize(requestedChassisSpeeds.vxMetersPerSecond, requestedChassisSpeeds.vyMetersPerSecond,
                 requestedChassisSpeeds.omegaRadiansPerSecond , 0.02)); // the 0.02 is the loop timing (20ms)
         }
         else
         {
+            mLastRequestedChassisSpeeds = requestedChassisSpeeds;
             return mSwerveDriveKinematics.toSwerveModuleStates(requestedChassisSpeeds);
         }
     }
@@ -645,6 +650,13 @@ public class SwerveDrive
         }
         throw new RuntimeException("Unknown wheel label:" + pLabel.Text());
     }
+
+    public ChassisSpeeds getLastRequestedChassisSpeeds()
+    {
+        return mLastRequestedChassisSpeeds;
+    }
+
+    
 
     public void EnableDiagnostics(WheelLabel pLabel)
     {

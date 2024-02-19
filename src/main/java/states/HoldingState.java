@@ -85,6 +85,7 @@ public class HoldingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
+        logHoldingStateValues();
         if (mShooterMode == ShooterMode.LowGoal)
         {
             mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
@@ -92,7 +93,7 @@ public class HoldingState extends AState {
         }
         else if (mShooterMode == ShooterMode.HighGoalManual)
         {
-            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
+            mSwerveDrive.Run(mControls);
 
         }
         else if (mShooterMode == ShooterMode.AutoAim)
@@ -151,6 +152,11 @@ public class HoldingState extends AState {
         if(mControls.GetForceIntakingMode())
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
+        }
+
+        if (mShooterMode == ShooterMode.HighGoalDriveBy && mHoldingMode == HoldingMode.Holding)
+        {
+            return new NextStateInfo(States.Shooting, ShooterMode.HighGoalDriveBy);
         }
 
         if (mControls.GetStartShootingSequence())
