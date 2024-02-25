@@ -1,11 +1,15 @@
 package universalSwerve.components.implementations;
 
+import java.util.Arrays;
+
 import javax.swing.text.html.FormSubmitEvent.MethodType;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -24,6 +28,7 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
 
 
     private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, true, false, false);
+    private final VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, true, false, false);
   
 
 
@@ -33,7 +38,8 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     */
     public TalonFXTranslationSystem(TalonFX pFalcon, PIDFConfiguration pPidfConfiguration, double pWheelDiameter, double pGearRatio)
     {
-        mFalcon = pFalcon;
+        mFalcon = pFalcon;      
+
         InitializeFalconPID(pPidfConfiguration);
         mWheelDiameter = pWheelDiameter;
         mGearRatio = pGearRatio;
@@ -83,8 +89,13 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         double rpmsAtMotor = rpms / mGearRatio;
         //SmartDashboard.putNumber("rpmsAtMotor", rpmsAtMotor);
         double targetVelocity = Conversions.RPMsToTalonFXVelocityUnit(rpmsAtMotor);
-        //SmartDashboard.putNumber("TargetVelocity", targetVelocity);
-        mFalcon.setControl(mVoltageVelocity.withVelocity(-1.0 * targetVelocity));//why do we need a negative here?  It seems like none of the invert options work....
+        SmartDashboard.putNumber("TargetVelocity", targetVelocity);
+    
+        
+        StatusCode sc = mFalcon.setControl(mVoltageVelocity.withVelocity(-1.0 * targetVelocity));//why do we need a negative here?  It seems like none of the invert options work....
+        //StatusCode sc = mFalcon.setControl(mVelocityDutyCycle.withVelocity(-1.0 * targetVelocity));//why do we need a negative here?  It seems like none of the invert options work....
+        
+        SmartDashboard.putString("SetControl cs", sc.toString());
         
     }
 
@@ -120,16 +131,26 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         pidConfiguration.Slot0.kP = pPidfConfiguration.I();
         pidConfiguration.Slot0.kP = pPidfConfiguration.D();
         pidConfiguration.Slot0.kV = pPidfConfiguration.F();
-        mFalcon.getConfigurator().apply(pidConfiguration);
+        //pidConfiguration.Slot0.kS = pPidfConfiguration.S();
+        SmartDashboard.putNumber("KV", pPidfConfiguration.F());
+        StatusCode statusCode = mFalcon.getConfigurator().apply(pidConfiguration);
+        SmartDashboard.putString("StatusCode", statusCode.toString());
+        
     }
 
     public void StopEverything()
     {
+        SmartDashboard.putNumber("StopEcverythingCalledAt", System.currentTimeMillis());
         mFalcon.stopMotor();
     }
   
     public double GetPercentOutput()
     {
         return mFalcon.get();
+    }
+
+    public java.util.List<TalonFX> GetSpeakers()
+    {
+        return Arrays.asList(mFalcon);
     }
 }

@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
+import frc.robot.LimelightInformation;
 import robosystems.Shooter;
 import states.IntakingState.IntakeMode;
 import robosystems.ExtendoArm;
@@ -50,7 +51,8 @@ public class ShootingState extends AState {
        
         
     private double CENTER_POINT = -0.29;
-    private double ADJUSTMENT_RATIO_FOR_DRIVING = ((0.2) / 4.5) * 5;
+    //TOWNSEND: private double ADJUSTMENT_RATIO_FOR_DRIVING = ((0.2) / 4.5) * 5;
+    private double ADJUSTMENT_RATIO_FOR_DRIVING = ((0.2) / 4.5) * 5.0 * 1.2;
     /**
      * Runs the intake. <br><br>
      * Ejection will only work while the button is held, and will go back to normal intaking if released
@@ -61,13 +63,30 @@ public class ShootingState extends AState {
         return CENTER_POINT +  -(pChassisSpeeds.vyMetersPerSecond * ADJUSTMENT_RATIO_FOR_DRIVING);
     }
 
+    private double getLeftRightErrorToleranceFromChassisSpeeds(ChassisSpeeds pChassisSpeeds)
+    {
+        double absoluteSpeed = Math.abs(pChassisSpeeds.vyMetersPerSecond);
+        //full speed:   Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN
+        //Stopped = 0.05;
+
+        double maxSpeedMetersPerSecond = 5.0;
+        double percentageOfMaxSpeed = (absoluteSpeed) / maxSpeedMetersPerSecond;
+        return Math.min(
+            Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN_WHEN_STOPPED + ((Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN - Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN_WHEN_STOPPED) * percentageOfMaxSpeed)
+            , Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN );            
+        
+        
+
+    }
+
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        
+        ChassisSpeeds chassisSpeeds = mSwerveDrive.getLastRequestedChassisSpeeds();
+
         logShootingStateInformation();
         checkForShootingPreperationButtons();
-        mShooter.setAngleBasedOnShooterMode(mShooterMode);
+        mShooter.setAngleBasedOnShooterMode(mShooterMode, chassisSpeeds);
         
         
 
@@ -97,21 +116,19 @@ public class ShootingState extends AState {
         }
 
         boolean highGoalDriveByExtensionConditonsMet = true;
-
+        boolean cameraInLeftRightRange = false;
         double value = -1;
+        double adjustedCenter = -1;
         if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
-            
-            try
+            double[] cameraPositionInTargetSpace = LimelightInformation.getCameraPoseTargetSpace();
+            if (cameraPositionInTargetSpace != null)
             {
-                NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-                NetworkTableEntry jsonNTE = table.getEntry("json");
-                double[] cameraPositionInTargetSpace = Functionality.getCameraPoseTargetSpace(jsonNTE.getString(null));  
                 value = cameraPositionInTargetSpace[0];
-                SmartDashboard.putNumber("Continous Value", value);
+                SmartDashboard.putNumber("Lime: X Displacement", value);
 
-                double adjustedCenter;
-                ChassisSpeeds chassisSpeeds = mSwerveDrive.getLastRequestedChassisSpeeds();
+                
+                
                 if (chassisSpeeds == null)
                 {
                     adjustedCenter = CENTER_POINT;
@@ -123,24 +140,38 @@ public class ShootingState extends AState {
 
                 SmartDashboard.putNumber("Adjusted Center Point", adjustedCenter);
 
-                highGoalDriveByExtensionConditonsMet = Math.abs(cameraPositionInTargetSpace[0] - adjustedCenter) < Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN; 
-                highGoalDriveByExtensionConditonsMet = highGoalDriveByExtensionConditonsMet && mShooter.getIfAutomaticAnglerInRange();
+                double leftRightErrorToleranceFromChassisSpeeds = getLeftRightErrorToleranceFromChassisSpeeds(chassisSpeeds);
 
+                cameraInLeftRightRange = Math.abs(cameraPositionInTargetSpace[0] - adjustedCenter) < leftRightErrorToleranceFromChassisSpeeds; //Old version: Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN;                 
+                boolean isAnglerInCorrectRange = mShooter.getIfAutomaticAnglerInRange(chassisSpeeds);
+                highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange &&  isAnglerInCorrectRange;
+                // highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange; //for now ignore height of shooter && mShooter.getIfAutomaticAnglerInRange();
+                
             }
-            catch (Exception e)
+            else
             {
-                SmartDashboard.putNumber("Error 2",System.currentTimeMillis());
+                cameraInLeftRightRange = false;
                 highGoalDriveByExtensionConditonsMet = false;
-            }// double distanceInXAndZ = Math.sqrt(
+            }
         }
-
         
         boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
        
+        boolean persistentlyHasCorrectSpeed = mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
 
         boolean specialTestVariableToEnableShooting = true;
+
+        SmartDashboard.putBoolean("persistentlyHasCorrectSpeed", persistentlyHasCorrectSpeed);
+        SmartDashboard.putBoolean("lowGoalExtensionConditionsMet", lowGoalExtensionConditionsMet);
+        SmartDashboard.putBoolean("highGoalDriveByExtensionConditonsMet", highGoalDriveByExtensionConditonsMet);
+        SmartDashboard.putBoolean("mHasShot", mHasShot);
+        SmartDashboard.putBoolean("specialTestVariableToEnableShooting", specialTestVariableToEnableShooting);
+        SmartDashboard.putBoolean("cameraInLeftRightRange", cameraInLeftRightRange);
+
+
+       
         if (
-            ((mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode)
+            ((persistentlyHasCorrectSpeed
             && lowGoalExtensionConditionsMet
             && highGoalDriveByExtensionConditonsMet)
             || mHasShot) 
@@ -149,9 +180,12 @@ public class ShootingState extends AState {
         {
             if (!mHasShot)
             {
-                SmartDashboard.putNumber("Distance first sees the value", value);
+                SmartDashboard.putNumber("DriveByTest: Distance when shot", value);
+                SmartDashboard.putNumber("DriveByTest: Adjusted Center when shot", adjustedCenter);
+                SmartDashboard.putNumber("DriveByTest: Distance From Adjusted Center When Shot", Math.abs(value - adjustedCenter));
                 mHasShot = true;
                 mTimeStartedToShoot = System.currentTimeMillis();
+                
                 if (mShooterMode == ShooterMode.HighGoalManual)
                 {
                    

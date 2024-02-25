@@ -16,7 +16,7 @@ import states.NextStateInfo;
 import states.ShootingState;
 import states.StateMachine;
 import states.TestControls;
-import states.TestControlsWithSwerve;
+import states.JoystickControlsWithSwerve;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -31,11 +31,15 @@ import universalSwerve.components.WheelLabel;
 import java.lang.Thread.State;
 import java.util.Arrays;
 
+import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.core.CorePigeon2;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -86,6 +90,50 @@ public class Robot extends TimedRobot
   private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, false, false, false);
   
   
+
+
+  public Robot()
+  {
+    super(0.005);//ovverride the loop timing... it was 20ms, set it to 10ms.
+  }
+
+  private TalonFX mLeftClimberMotor;
+  private TalonFX mRightClimberMotor; 
+
+  private Orchestra mOrchestra = new Orchestra();
+
+  private void playStartupMusic()
+  {  
+     /*        
+    var status = mOrchestra.loadMusic("sonic.chrp");
+    if (!status.isOK()) 
+    {
+        
+    }
+    mOrchestra.play();
+    */
+  }
+
+  private void RegisterSpeakers(java.util.List<TalonFX> pSpeakers)
+  {
+    for(int i = 0; i < pSpeakers.size(); i++)
+    {
+      RegisterSpeaker(pSpeakers.get(i));
+    }
+  }
+
+  private void RegisterSpeaker(TalonFX pSpeaker)
+  {
+
+        AudioConfigs audioConfigs = new AudioConfigs();
+        audioConfigs.AllowMusicDurDisable = true;
+        audioConfigs.BeepOnBoot = false;
+        audioConfigs.BeepOnConfig = false;
+        pSpeaker.getConfigurator().apply(audioConfigs);
+
+        mOrchestra.addInstrument(pSpeaker);
+  }
+
   private CANSparkMax CreateTrapMotor(int pDeviceID, boolean pIsInverted)
   {
     CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushed);
@@ -95,6 +143,7 @@ public class Robot extends TimedRobot
     returnValue.burnFlash();
     return returnValue;
   }
+
 
 
 
@@ -110,6 +159,17 @@ public class Robot extends TimedRobot
     mShooter = new Shooter();
     mExtendoArm = new ExtendoArm();
     mSwerveDrive = SwerveFactory.Create2024Swerve();
+
+    mLeftClimberMotor = new TalonFX(11);
+    mRightClimberMotor = new TalonFX(12);
+    
+
+    MotorOutputConfigs motorOutputConfig = new MotorOutputConfigs();
+    motorOutputConfig.NeutralMode = NeutralModeValue.Brake;
+    mLeftClimberMotor.getConfigurator().apply(motorOutputConfig);
+    mRightClimberMotor.getConfigurator().apply(motorOutputConfig);
+    
+        
   }
 
   private void CreateControls()
@@ -133,11 +193,18 @@ public class Robot extends TimedRobot
     CreateControls();
 
     XboxController alternateController = new XboxController(1);
-    TestControlsWithSwerve testControls = new TestControlsWithSwerve(mMainController, alternateController);
+    JoystickControlsWithSwerve testControls = new JoystickControlsWithSwerve(mMainController, alternateController);
     mStateMachine = new StateMachine(testControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, null);
     // mIntakingState = new IntakingState(mSwerveDrive, mIntake, mShooter, testControls);
     // mHoldingState = new HoldingState(mSwerveDrive, mIntake, mShooter, testControls);
     // mShootingState = new ShootingState(mSwerveDrive, mIntake, mShooter, testControls);
+    
+    RegisterSpeakers(mSwerveDrive.GetSpeakers());
+    RegisterSpeakers(mIntake.getSpeakers());
+    RegisterSpeakers(mShooter.getSpeakers());
+
+    playStartupMusic();
+
     
   }
 
@@ -159,6 +226,7 @@ public class Robot extends TimedRobot
 
   public void robotPeriodic()
   {
+    LimelightInformation.calculateCameraPoseTargetSpace();
     //LogMotorAndSensorBasics();
   }
 
@@ -485,43 +553,38 @@ public class Robot extends TimedRobot
     }
   }
 
+  private double lastRecordedX = 0; 
+
   public void logLimeLightInfo()
   {
-    try {
-
-      NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-      NetworkTableEntry jsonNTE = table.getEntry("json");
-      String json_dump = jsonNTE.getString("null");
-
-      double[] camerapose_targetspace = Functionality.getCameraPoseTargetSpace(json_dump);
-      if (camerapose_targetspace != null)
-      {
-        SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
-        SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
-        SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
-
-        SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
-        SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
-        SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
-        SmartDashboard.putNumber("Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
-        SmartDashboard.putBoolean("Can See Tag", true);
-      }
-      else
-      {
-        SmartDashboard.putNumber("X displacement", -1);
-        SmartDashboard.putNumber("Y displacement", -1);
-        SmartDashboard.putNumber("Z displacement", -1);
-        SmartDashboard.putNumber("Roll displacement", -1);
-        SmartDashboard.putNumber("Pitch displacement", -1);
-        SmartDashboard.putNumber("Yaw displacement", -1);
-        SmartDashboard.putBoolean("Can See Tag", false);
-        
-      }
-    }
-    catch (Exception e)
+    double[] camerapose_targetspace = LimelightInformation.getCameraPoseTargetSpace();
+    if (camerapose_targetspace != null)
     {
-      SmartDashboard.putString("Error", e.getLocalizedMessage());
+      SmartDashboard.putNumber("Lime: X change since last TS", camerapose_targetspace[0] - lastRecordedX);
+      lastRecordedX = camerapose_targetspace[0];
+      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
+      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
+      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
+
+      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
+      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
+      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
+      SmartDashboard.putNumber("Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
+      SmartDashboard.putBoolean("Can See Tag", true);
     }
+    else
+    {
+      SmartDashboard.putNumber("X displacement", -1);
+      SmartDashboard.putNumber("Y displacement", -1);
+      SmartDashboard.putNumber("Z displacement", -1);
+      SmartDashboard.putNumber("Roll displacement", -1);
+      SmartDashboard.putNumber("Pitch displacement", -1);
+      SmartDashboard.putNumber("Yaw displacement", -1);
+      SmartDashboard.putBoolean("Can See Tag", false);
+      
+    }
+    
+   
   }
 
   public void zeroAnglerEncoderAndGyro()
@@ -535,7 +598,7 @@ public class Robot extends TimedRobot
       
       if (mShooter.isAnglerHardReverseLimitSwitchPressed())
       {
-        mSwerveDrive.SetGyroscopeCurrentAngle(0);
+        mSwerveDrive.SetGyroscopeCurrentAngle(180); // remember to set this back to 0 for real game.  180 is for testing where you can ssee the foal.
     
         mAnglerMotorAndGyroZeroingHasOccurred = true;
         mShooter.setAnglerSpeed(0);
@@ -552,23 +615,60 @@ public class Robot extends TimedRobot
 
   
 
-
+  private long mLastEntryTime;
   private double mPosition = -800;
   public void teleopPeriodic()
   {
+    // mSwerveDrive.Run(mJoystickSwerveControls);
+    long entryTime = System.currentTimeMillis();
+    SmartDashboard.putNumber("TimeBetweenCallsToTeleopPeriodic", mLastEntryTime - entryTime);
+    mShooter.logShooterAngle();
+    mLastEntryTime = entryTime;
+    if (mMainController.getYButton())
+    {
+      mRightClimberMotor.set(0.2);
+    }
+    else if (mMainController.getXButton())
+    {
+      mRightClimberMotor.set(-0.2);
+    }
+    else
+    {
+      mRightClimberMotor.set(0);
+    }
+
+    if (mMainController.getBButton())
+    {
+      mLeftClimberMotor.set(-0.2);
+    }
+    else if (mMainController.getAButton())
+    {
+      mLeftClimberMotor.set(0.2);
+    }
+    else
+    {
+      mLeftClimberMotor.set(0);
+    }
+
+    
+
+    
+    
     // SmartDashboard.putNumber("New Gyro Roll", mPigeon2.getRoll().getValueAsDouble());
     // SmartDashboard.putNumber("New Gyro Yaw", mPigeon2.getYaw().getValueAsDouble());
     // SmartDashboard.putNumber("New Gyro Pitch", mPigeon2.getPitch().getValueAsDouble());
+    
+
+
+    /* 
     logLimeLightInfo();
-    // SmartDashboard.putNumber("New Gyro Angle", mPigeon2.getRoll().getValueAsDouble());
+      mSwerveDrive.LogDiagnostics();
     if (!mAnglerMotorAndGyroZeroingHasOccurred)
     {
       zeroAnglerEncoderAndGyro();
       return;
     }
     
-    
-    // mSwerveDrive.LogDiagnostics();
     if (mSwerveDrive.getLastRequestedChassisSpeeds() != null)
     {
       SmartDashboard.putNumber("Last Rq Chassis Speeds VY", mSwerveDrive.getLastRequestedChassisSpeeds().vyMetersPerSecond);
@@ -579,6 +679,10 @@ public class Robot extends TimedRobot
     }
     mStateMachine.Run();
     
+    long exitTime = System.currentTimeMillis();
+
+    SmartDashboard.putNumber("TimeOfTelopPeriodic", exitTime - entryTime);
+    */
   
   }
 

@@ -55,10 +55,21 @@ public class SwerveFactory
         //ADIS16470Gyro gyro = new ADIS16470Gyro(edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis.kZ, true);
         Pigeon2Imu gyro = new Pigeon2Imu(true);
                 //Drive FPID Configurations:
+        /* Townsend config */
+        /*
         PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12 * 13.5/14.15);
         PIDFConfiguration seDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12 * 13.5/14.4);
         PIDFConfiguration swDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.12);
         PIDFConfiguration nwDriveFPIDCongiruation = new PIDFConfiguration(0.00, 0, 0,  0.12 * 13.5/13.9);
+        */
+
+        //SysID Config
+        
+        PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.11891, 0.35743);
+        PIDFConfiguration seDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.11252, 0.34999);
+        PIDFConfiguration swDriveFPIDCongiruation = new PIDFConfiguration(0.000, 0, 0,  0.11212, 0.31452);
+        PIDFConfiguration nwDriveFPIDCongiruation = new PIDFConfiguration(0.00, 0, 0,  0.12373,  0.29215);
+
         PIDFConfiguration[] driveFPIDConfigurations = new PIDFConfiguration[]{ neDriveFPIDCongiruation, seDriveFPIDCongiruation, swDriveFPIDCongiruation, nwDriveFPIDCongiruation};
 
 

@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.Arrays;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
@@ -27,10 +28,8 @@ import edu.wpi.first.util.datalog.DoubleLogEntry;
  * project.
  */
 public class RobotLimelight extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
+  private TalonFX mLeftClimberMotor;
+  private TalonFX mRightClimberMotor; 
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -38,9 +37,7 @@ public class RobotLimelight extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
+    
   }
 
   /**
@@ -65,66 +62,24 @@ public class RobotLimelight extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
-        break;
-    }
+
   }
 
   /** This function is called once when teleop is enabled. */
   CANSparkMax rollerMotor;
   @Override
   public void teleopInit() {
-    rollerMotor = new CANSparkMax(15, MotorType.kBrushed);
+    mLeftClimberMotor = new TalonFX(0);
+    mRightClimberMotor = new TalonFX(0);
   }
 
   /** This function is called periodically during operator control. */
 
-  public double[] getCameraPoseTargetSpace(String json)
-  {
-    // try {
-      if (json.equals("null"))
-      {
-        return null;
-      }
-      int idx1 = json.indexOf("t6c_ts");
-      int idx2 = json.indexOf("t6r_fs");
-      if (idx1 > 0 && idx2 > 0)
-      {
-        // SmartDashboard.putString("test", json.substring(idx1,idx2));
-        String s1 = json.substring(idx1,idx2);
-        s1 = s1.substring(9,s1.length()-3);
-        String[] comma_split_list = s1.split(",");
-        double[] double_array = new double[6];
-        for (int i = 0; i < comma_split_list.length; i++)
-        {
-            // System.out.println(comma_split_list[i]);
-            double_array[i] = Double.parseDouble(comma_split_list[i]);
-        }
-        // SmartDashboard.putString("should work", Arrays.toString(double_array));
-        return double_array;
-      }
-      return null;
-    // }
-    // catch (Exception e) {
-    //   throw e;
-     
-    // }
-    
-  }
   @Override
   public void teleopPeriodic() {
     
@@ -143,33 +98,7 @@ public class RobotLimelight extends TimedRobot {
 
 
 
-    NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-
-    NetworkTableEntry jsonNTE = table.getEntry("json");
-    String json_dump = jsonNTE.getString("null");
-
-    double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
-    if (camerapose_targetspace != null)
-    {
-      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
-      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
-      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
-
-      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
-      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
-      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
-      SmartDashboard.putBoolean("Can See Tag", true);
-    }
-    else
-    {
-      SmartDashboard.putNumber("X displacement", -1);
-      SmartDashboard.putNumber("Y displacement", -1);
-      SmartDashboard.putNumber("Z displacement", -1);
-      SmartDashboard.putNumber("Roll displacement", -1);
-      SmartDashboard.putNumber("Pitch displacement", -1);
-      SmartDashboard.putNumber("Yaw displacement", -1);
-      SmartDashboard.putBoolean("Can See Tag", false);
-    }
+    // if ()
     
     // SmartDashboard.putString("json", json_dump);
     // SmartDashboard.putString("currentEntry", Arrays.toString(botPose));

@@ -6,12 +6,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import universalSwerve.utilities.SwerveNudgingDirection;
 
 
-public class TestControlsWithSwerve implements Controls {
+public class JoystickControlsWithSwerve implements Controls {
 
     XboxController mMainController; 
     XboxController mAlternateController; 
 
-    public TestControlsWithSwerve(XboxController pMainController, XboxController pAlternateController)
+    public JoystickControlsWithSwerve(XboxController pMainController, XboxController pAlternateController)
     {
         mMainController = pMainController;
         mAlternateController = pAlternateController;
@@ -70,7 +70,7 @@ public class TestControlsWithSwerve implements Controls {
     {
         //square to allow for easy speed control on low speeds
         double triggerValue = mMainController.getRightTriggerAxis();
-        return triggerValue * triggerValue;
+        return 1.0 * triggerValue * triggerValue;
     }
 
     public double GetSwerveRotationalSpeed()

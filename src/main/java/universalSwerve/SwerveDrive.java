@@ -7,6 +7,11 @@ import universalSwerve.controls.ISwerveControls;
 import universalSwerve.hardware.IGyroscope;
 import universalSwerve.utilities.AngleUtilities;
 import universalSwerve.utilities.Conversions;
+
+import java.util.ArrayList;
+
+import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -695,5 +700,15 @@ public class SwerveDrive
             SmartDashboard.putNumber("GyroAngle",mGyroscope.GetCurrentAngle());
         }
 
+    }
+
+    public java.util.List<TalonFX> GetSpeakers()
+    {
+        java.util.ArrayList<TalonFX> returnValue = new ArrayList<TalonFX>();
+        for(int i = 0; i < mWheels.length; i++)
+        {
+            returnValue.addAll(mWheels[i].GetSpeakers());
+        }
+        return returnValue;
     }
 }

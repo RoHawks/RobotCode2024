@@ -1,7 +1,14 @@
 package universalSwerve.components;
 
+
+
+import java.util.Arrays;
+
+import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import universalSwerve.components.implementations.TalonFXTranslationSystem;
 import universalSwerve.components.implementations.WheelMode;
 import universalSwerve.utilities.AngleUtilities;
 import universalSwerve.utilities.Conversions;
@@ -167,5 +174,18 @@ public class Wheel
     public double GetVelocity()
     {
         return mTranslationSystem.GetVelocity();
+    }
+
+    public java.util.List<TalonFX> GetSpeakers()
+    {
+        if(mTranslationSystem instanceof TalonFXTranslationSystem)
+        {
+            return ((TalonFXTranslationSystem) mTranslationSystem).GetSpeakers();
+        }
+        else
+        {
+            return new java.util.ArrayList<TalonFX>();
+        }
+
     }
 }

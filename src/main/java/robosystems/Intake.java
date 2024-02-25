@@ -1,5 +1,9 @@
 package robosystems;
 
+import java.util.Arrays;
+
+import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -23,6 +27,7 @@ public class Intake {
     private SparkAnalogSensor mBreakBeam;
     private double mPositionAtBreakBeam;
 
+    
     private TalonFX CreateConveyorBeltMotor(int pDeviceID, boolean pIsInverted)
     {
         TalonFX returnValue = new TalonFX(pDeviceID);
@@ -61,6 +66,12 @@ public class Intake {
         // Set to max value at the start so if the position isn't recorded then it will never backup
         mPositionAtBreakBeam = Double.MAX_VALUE;
         
+        
+       
+        
+       
+        
+
     }
 
     public boolean getBreakBeamStatus()
@@ -146,6 +157,11 @@ public class Intake {
     public void stopMotors()
     {
         setSpeeds(0);
+    }
+
+    public java.util.List<TalonFX> getSpeakers()
+    {
+        return Arrays.asList(mConveyorBeltBottom, mConveyorBeltTop);
     }
 }
 /* 
