@@ -56,13 +56,19 @@ public class Intake {
         return returnValue;
     }
     
+    private CANSparkMax mTrapIntake;
+    public void TestSetTrapIntakeSpeed(double pSpeed)
+    {
+        mTrapIntake.set(pSpeed);
+    }
+
     public Intake()
     {
         mConveyorBeltTop = CreateConveyorBeltMotor(13, false);
         mConveyorBeltBottom =  CreateConveyorBeltMotor(6, false);
         mIntakeRoller =  CreateFrontIntakeRollerMotor(15, true); ;
-        mBreakBeam =  CreateFrontIntakeRollerMotor(8, true).getAnalog(Mode.kRelative);
-        
+        mTrapIntake = CreateFrontIntakeRollerMotor(8, true);
+        mBreakBeam = mTrapIntake.getAnalog(Mode.kRelative);
         // Set to max value at the start so if the position isn't recorded then it will never backup
         mPositionAtBreakBeam = Double.MAX_VALUE;
         

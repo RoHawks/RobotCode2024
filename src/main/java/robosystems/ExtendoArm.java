@@ -17,7 +17,15 @@ public class ExtendoArm {
     private double TRAP_TARGET = -2800; //Replace with proper value
     private double RETRACT_TARGET = -50;
    
-    
+    public void testOnlyRunAtSpeed(double pSpeed)
+    {
+        mExtendoMotor.set(pSpeed);
+    }
+
+    public double getEncoderReading()
+    {
+        return mExtendoEncoder.getPosition();
+    }
 
     private CANSparkMax CreateExtendoArmsMotor(int pDeviceID, boolean pIsInverted)
     {
@@ -41,6 +49,10 @@ public class ExtendoArm {
         return returnValue;
     }
     
+    public double getCurrentDraw()
+    {
+        return mExtendoMotor.getOutputCurrent();
+    }
 
 
     // Constructor

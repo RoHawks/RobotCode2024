@@ -16,7 +16,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import universalSwerve.utilities.SwerveNudgingDirection;
@@ -51,6 +54,8 @@ public class SwerveDrive
 
     private boolean mDiagnosticsEnabled = false;
 
+    private SwerveDriveOdometry mOdometry;
+
 	public enum DrivingStyle
 	{
 		FIELD_RELATIVE,
@@ -84,10 +89,65 @@ public class SwerveDrive
 
         mAngleTrackController = new PIDController(0.1, 0, 0);
         mAngleTrackController.enableContinuousInput(0, 360);
-        
+
         Initialize();
+
+         //Swerve Drive Odometry Code add for Choreo
+        //Adapted from https://github.com/SleipnirGroup/ChoreoSwerveBot/blob/main/src/main/java/frc/robot/subsystems/DriveSubsystem.java#L111
+        mOdometry = new SwerveDriveOdometry(
+          mSwerveDriveKinematics,
+          new Rotation2d(
+                Math.toRadians(
+                    AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles(mGyroscope.GetCurrentAngle()))), //hmmm has this been initialized  yet?  
+            new SwerveModulePosition[] {
+            mNEWheel.GetPosition(),
+            mSEWheel.GetPosition(),
+            mSWWheel.GetPosition(),
+            mNWWheel.GetPosition()
+          });
     }
     
+    //This should be called in each main loop iteration of the program.
+    public void UpdateOdometry()
+    {
+
+        mOdometry.update(
+        new Rotation2d(
+                Math.toRadians(
+                    AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles(mGyroscope.GetCurrentAngle()))), //hmmm has this been initialized  yet?  
+            new SwerveModulePosition[] {
+            mNEWheel.GetPosition(),
+            mSEWheel.GetPosition(),
+            mSWWheel.GetPosition(),
+            mNWWheel.GetPosition()
+            });
+        
+        SmartDashboard.putNumber("Choreo_CurrentOdometry_X", mOdometry.getPoseMeters().getX());
+        SmartDashboard.putNumber("Choreo_CurrentOdometry_Y", mOdometry.getPoseMeters().getY());
+        SmartDashboard.putNumber("Choreo_CurrentOdometry_Rotation", mOdometry.getPoseMeters().getRotation().getDegrees());
+
+    }
+
+    public void ResetOdometry(Pose2d pose)
+    {
+        mOdometry.resetPosition(
+            new Rotation2d(
+             Math.toRadians(
+                    AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles(mGyroscope.GetCurrentAngle()))), 
+            new SwerveModulePosition[] {
+            mNEWheel.GetPosition(),
+            mSEWheel.GetPosition(),
+            mSWWheel.GetPosition(),
+            mNWWheel.GetPosition()
+            },
+            pose);
+    }
+ 
+    public Pose2d getPose() 
+    {
+        return mOdometry.getPoseMeters();
+    }
+
     private void Initialize()
     {
         for(int i = 0; i < mWheels.length; i++)
@@ -124,7 +184,7 @@ public class SwerveDrive
     private ChassisSpeeds mLastRequestedChassisSpeeds;
     private SwerveModuleState[] CalculateModuleTargetStates(double linearSpeedFrontBackComponent, double linearSpeedLeftRightComponent, double requestedRotationalSpeed, double gyroAngle, DrivingStyle pDrivingStyle)
     {
-        //First parameter is m/s forward, second is m/s to the left, third is radians/second counter clockwise
+        //First parameter is inches/s forward, second is inches/s to the left, third is radians/second counter clockwise
         //This works without gyro:
         //ChassisSpeeds requestedChassisSpeeds = 
         //	new ChassisSpeeds(linearSpeedFrontBackComponent, -1.0 * linearSpeedLeftRightComponent, -1.0 * Math.toRadians(requestedRotationalSpeed));
@@ -312,7 +372,7 @@ public class SwerveDrive
             This is generally mapped directly onto the left joystick Y value when normal driving
         pTranslationVelocityPercentage: [0,1]:
             The percentage of the maximum linear speed for the module
-        pTranslationVelocityPercentage: [-1,1]:
+        pRotationSpeedPercentage: [-1,1]:
             The percentage of the maximum rotational speed for the module
             +1 is clockwise, -1 is counte clockwise
         
@@ -549,6 +609,66 @@ public class SwerveDrive
         }
     }
 
+      /*
+        Computes and sets module states for the given requested input
+        pXTranslation: meters per second
+            The percentage of the maximum translation speed to be given in the X direction.
+            X here is Field relative when in Field relative mode or Robot Releative when in robot relative mode
+            1 means "right" in the context above, -1 means "left in the context above
+            This is generally mapped directly onto the left joystick X value when normal driving
+        pYTranslationComponent: meters per second
+            The percentage of the maximum translation speed to be given in the Y direction.
+            Y here is Field relative when in Field relative mode or Robot Releative when in robot relative mode
+            1 means "forward" in the context above, -1 means "backwards" in the context above
+            This is generally mapped directly onto the left joystick Y value when normal driving
+        pRotationSpeed: Maybe Radians per second?
+            ???
+        
+    */
+
+
+    //This method is intended to be called by Choreo
+    public void Run(double pXTranslationMetersPerSecond, double pYTranslationMetersPerSecond, double pRotationSpeed )
+    {
+        SmartDashboard.putNumber("ChoreoCommand_timeStamp", System.currentTimeMillis());
+        SmartDashboard.putNumber("Choreo_pXTranslationMetersPerSecond", pXTranslationMetersPerSecond);
+        SmartDashboard.putNumber("Choreo_pYTranslationMetersPerSecond", pYTranslationMetersPerSecond);
+        SmartDashboard.putNumber("Choreo_pRotationSpeed", pRotationSpeed);
+         SwerveModuleState[] targetModelStates = CalculateModuleTargetStates(
+            Conversions.MetersPerSecondToInchesPerSecond(pYTranslationMetersPerSecond),
+            Conversions.MetersPerSecondToInchesPerSecond(pXTranslationMetersPerSecond), 
+            -1.0 *Math.toDegrees(pRotationSpeed), //sWERVE kINEMATICS turns in opposite direction from our units, so flip it here
+             0, DrivingStyle.ROBOT_RELATIVE);
+         for(int i = 0; i < mWheels.length; i++)
+		{			
+            {
+                Wheel wheel = mWheels[i];                            
+                SwerveModuleState targetState = targetModelStates[i];
+                //this takes care of the "drive it in reverse if your are close to the right angle already" thing:
+                SwerveModuleState optimizedTargetState = OptimizeTargetState(targetState, wheel.GetCurrentAngle());
+                
+                SmartDashboard.putNumber("Choreo_NE_X_DesiredSpeed", optimizedTargetState.speedMetersPerSecond);
+
+                switch(wheel.GetWheelMode())
+                {
+                    case Enabled:
+                        double targetAngle = AngleUtilities.ConvertSwerveKinematicsAnglesToOurAngles(optimizedTargetState.angle.getDegrees());                
+                        wheel.SetWheelTargetAngle(targetAngle);
+                        wheel.SetWheelVelocity(Conversions.MetersPerSecondToInchesPerSecond(optimizedTargetState.speedMetersPerSecond));
+                        break;
+                    case DontMove:
+                        wheel.StopEverything();
+                        break;
+                    case Castor:
+                        throw new RuntimeException("Castor not supported yet.");
+                    default:
+                        throw new RuntimeException("Unknown wheel mode.");
+                        
+                }               
+            }
+		}
+    }
+
     public void Run(ISwerveControls pControls)
     {
         SmartDashboard.putNumber("Old Gyro Angle", mGyroscope.GetCurrentAngle());
@@ -711,4 +831,7 @@ public class SwerveDrive
         }
         return returnValue;
     }
+
+
+
 }

@@ -43,7 +43,7 @@ public class Constants {
 
 
     public static double LOW_GOAL_ROTATION = 270;
-    public static final double HIGH_GOAL_ROTATION = 180;  // remember to set this back to 0 for real game.  180 is for testing where you can ssee the foal.
+    public static final double HIGH_GOAL_ROTATION = 0;  // remember to set this back to 0 for real game.  180 is for testing where you can ssee the foal.
     public static final double ANGLER_ACCEPTABLE_ERROR = 15.0;
 
 

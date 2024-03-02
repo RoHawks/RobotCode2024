@@ -6,7 +6,9 @@ import java.util.Arrays;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import universalSwerve.components.implementations.TalonFXTranslationSystem;
 import universalSwerve.components.implementations.WheelMode;
@@ -187,5 +189,21 @@ public class Wheel
             return new java.util.ArrayList<TalonFX>();
         }
 
+    }
+
+    /*
+     * This returns the "SwerveModulePosition" in WPILib terms, which is:
+     * Meters travelled for the drive motor
+     * Angle of the swerve wheel, in radians, according the the WPI Lib Scheme, which is .... I forget.  But I think we've already got a conversion factor in here.
+     */
+    public SwerveModulePosition GetPosition() 
+    {
+        return new SwerveModulePosition(
+        Conversions.InchesToMeters(mTranslationSystem.GetDistanceTravelled()), 
+        new Rotation2d(
+            Math.toRadians(
+                AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles( mRotationSystem.GetCurrentAngle() )
+            )        
+        ));
     }
 }

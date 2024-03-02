@@ -60,6 +60,8 @@ public class ShootingState extends AState {
 
     private double getAdjustedCenterFromChassisSpeed(ChassisSpeeds pChassisSpeeds)
     {
+
+        SmartDashboard.putNumber("pChassisSpeeds.vyMetersPerSecond", pChassisSpeeds.vyMetersPerSecond);
         return CENTER_POINT +  -(pChassisSpeeds.vyMetersPerSecond * ADJUSTMENT_RATIO_FOR_DRIVING);
     }
 

@@ -109,6 +109,10 @@ public class Shooter{
         return returnValue;
     }
 
+    public double GetAnglerEncoderReading()
+    {
+        return mAnglerMotor.getEncoder().getPosition();
+    }
 
     private CANSparkFlex CreateAnglerMotor(int pDeviceID, boolean pIsInverted)
     {
@@ -129,8 +133,8 @@ public class Shooter{
         mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyOpen);
         mHardReverseLimitSwitch = returnValue.getReverseLimitSwitch(Type.kNormallyOpen);
         
-        mHardForwardLimitSwitch.enableLimitSwitch(false);
-        mHardReverseLimitSwitch.enableLimitSwitch(false);
+        mHardForwardLimitSwitch.enableLimitSwitch(true);
+        mHardReverseLimitSwitch.enableLimitSwitch(false);//ATS until we fix this....
         
         // mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyClosed);
         // mHardReverseLimitSwitch = returnValue.getReverseLimitSwiotch(Type.kNormallyClosed);
@@ -173,7 +177,10 @@ public class Shooter{
         mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
 
     }
-
+    public boolean mAnglerHardReverseLimitSwitchisPressed()
+    {
+        return mHardReverseLimitSwitch.isPressed();
+    }
     
 
     public void setSpeed(double topSpeed, double bottomSpeed){ //set speed to integer -1.0 <= n <= 1.0
@@ -381,10 +388,12 @@ public class Shooter{
 
         calculatedAngle = calculatedAngle * (1.0 / Constants.ANGLER_ROTATIONS_TO_ANGLES);
 
+        
         double maxSpeedMetersPerSecond = 5.0;
         double adjustmentFromZVelocity;
         if (pChassisSpeeds != null)
         {
+            SmartDashboard.putNumber("pChassisSpeeds.vxMetersPerSecond", pChassisSpeeds.vxMetersPerSecond);
             double percentageOfMaximumZSpeed = pChassisSpeeds.vxMetersPerSecond / maxSpeedMetersPerSecond;
             adjustmentFromZVelocity = percentageOfMaximumZSpeed * Constants.Z_VELOCITY_COMPENSATION;
         }
@@ -396,6 +405,8 @@ public class Shooter{
 
         calculatedAngle += adjustmentFromZVelocity;
 
+        double adamOffset = -10;
+        calculatedAngle += adamOffset;
         SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
         return calculatedAngle;
     }
