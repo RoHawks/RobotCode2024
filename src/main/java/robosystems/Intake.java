@@ -119,6 +119,13 @@ public class Intake {
                   Constants.INTAKE_ROLLERS_GENTLE_ROLLING_BACKWARDS_SPEED);
     }
 
+    public void setToInstaLaunch()
+    {
+        setSpeeds(Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 
+                  Constants.NORMAL_INTAKING_SPEED_CONVEYORS, 
+                  Constants.NORMAL_INTAKING_SPEED_INTAKE_ROLLER);
+    }
+
     public void setWholeIntakeSpeed(double pSpeed) 
     {
         setSpeeds(pSpeed);
@@ -127,9 +134,14 @@ public class Intake {
     {
         setSpeeds(0,0, Constants.INTAKE_ROLLERS_GENTLE_ROLLING_BACKWARDS_SPEED); 
     }
-    public void setToEjectingSpeed()
+    public void setToFirstEjectingSpeed()
     {
 	    setSpeeds(Constants.EJECTING_SPEED); 
+    }
+
+    public void setToSecondEjectingSpeed()
+    {
+	    setSpeeds(-Constants.EJECTING_SPEED); 
     }
 
     public boolean hasConveyorFinishedBackingUp()

@@ -25,7 +25,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
-import frc.robot.LimelightInformation;
+import frc.robot.LimelightManager;
 import states.ShooterMode; 
 
 /*
@@ -80,7 +80,7 @@ public class Shooter{
     private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, false, false, false);
     //private final com.ctre.phoenix6.controls.VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, false, false, false);
 
-
+    private LimelightManager mLimelightManager;
     
 
     private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted, TalonFXConfiguration pShooterConfig)
@@ -133,7 +133,7 @@ public class Shooter{
         mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyOpen);
         mHardReverseLimitSwitch = returnValue.getReverseLimitSwitch(Type.kNormallyOpen);
         
-        mHardForwardLimitSwitch.enableLimitSwitch(true);
+        mHardForwardLimitSwitch.enableLimitSwitch(false);
         mHardReverseLimitSwitch.enableLimitSwitch(false);//ATS until we fix this....
         
         // mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyClosed);
@@ -146,8 +146,10 @@ public class Shooter{
     }
 
 
-    public Shooter() // initialization method
+    public Shooter(LimelightManager pLimelightManager) // initialization method
     {
+        mLimelightManager = pLimelightManager;
+
         mAnglerMotor =  CreateAnglerMotor(14, true); 
         
         TalonFXConfiguration topShooterConfig = new TalonFXConfiguration();            
@@ -176,11 +178,15 @@ public class Shooter{
         mHasCorrectSpeed = false;
         mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
 
+        resetOutputRange();
+
     }
     public boolean mAnglerHardReverseLimitSwitchisPressed()
     {
         return mHardReverseLimitSwitch.isPressed();
     }
+
+    
     
 
     public void setSpeed(double topSpeed, double bottomSpeed){ //set speed to integer -1.0 <= n <= 1.0
@@ -227,6 +233,11 @@ public class Shooter{
     public boolean isAnglerHardReverseLimitSwitchPressed()
     {
         return mHardReverseLimitSwitch.isPressed();
+    }
+
+    public void setToSecondEjectingSpeed()
+    {
+        spinUpToHighGoalSpeed();
     }
 
     public void spinUpToHighGoalSpeed()
@@ -358,12 +369,16 @@ public class Shooter{
 
 
 
+    //In case we very briefly lose view of the AprilTag with camera, this variable will keep track
+    //of the last time we saw it, and we'll just reuse that.
+    private double mLastCalculatedAutoAngleFromCamera = Constants.DEFAULT_AUTO_AIM_ANGLE;
     public double calculateAutoAngle(ChassisSpeeds pChassisSpeeds)
     {
-        double[] cameraPoseTargetSpace = LimelightInformation.getCameraPoseTargetSpace();
+        double[] cameraPoseTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
         if (cameraPoseTargetSpace == null)
         {
-            return Constants.DEFAULT_AUTO_AIM_ANGLE;
+            //return Constants.DEFAULT_AUTO_AIM_ANGLE;
+            return mLastCalculatedAutoAngleFromCamera;
         }
         double yDisplacement = 1.12;
 
@@ -408,6 +423,8 @@ public class Shooter{
         double adamOffset = -10;
         calculatedAngle += adamOffset;
         SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
+
+        mLastCalculatedAutoAngleFromCamera = calculatedAngle;
         return calculatedAngle;
     }
     public void automaticAngle(ChassisSpeeds pChassisSpeeds) 
@@ -433,11 +450,47 @@ public class Shooter{
     }
 
 
+    private double mLastTargetAngle;
     public void setAngle(double pDesiredPosition) //needs to be implemented
     {
+        mLastTargetAngle = pDesiredPosition;
         mAnglerMotor.getPIDController().setReference(pDesiredPosition, ControlType.kPosition);
 
     }
+
+    public void enterTrapShootingStart()
+    {
+        mPIDController.setOutputRange(-0.3, 0.3);
+    }
+
+    public void goToTrapShootAngle()
+    {
+
+        SmartDashboard.putNumber("Encoder says ", mAnglerMotor.getEncoder().getPosition());
+        mAnglerMotor.getPIDController().setReference(Constants.CLIMBING_ANGLE, ControlType.kPosition);
+    
+    }
+
+    
+    public void resetOutputRange()
+    {
+        mPIDController.setOutputRange(-1, 1);
+    }
+
+
+    public boolean checkIfAnglerIsCloseEnough()
+    {
+        double calculatedError = mLastTargetAngle - mAnglerMotor.getEncoder().getPosition();        
+        if (Math.abs(calculatedError) < Constants.ANGLER_ACCEPTABLE_ERROR)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 
     public void setAngleToIntakingAngle() //needs to be implemented
     {

@@ -56,9 +56,12 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         ResetDriveEncodersToZero();
     }
 
+
+
+    private double mRotorValueToExcludeFromReset = 0;
     public void ResetDriveEncodersToZero()
 	{
-        throw new RuntimeException("ResetDriveEncodersToZero not implemented yet for TalonFXTranslationSystem");        
+        mRotorValueToExcludeFromReset = this.mFalcon.getRotorPosition().getValue() ;
 	}
 
 	private double ENCODER_TICKS_PER_REVOLUTION_OF_MOTOR = 1;
@@ -67,15 +70,27 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
 	{
 		double numberOfMotorRotations = pEncoderTicks / ENCODER_TICKS_PER_REVOLUTION_OF_MOTOR ;
 		double numberOfWheelRotations = numberOfMotorRotations  * mGearRatio;
-		double distanceTravelled = Math.abs(numberOfWheelRotations * Math.PI * mWheelDiameter);
+        //ATS 3/2/2024
+        //Gromble, gromble, gromble.
+        //This ABS really shouldn't be here
+        //I suspect it was in here from previous, simple autnomouses where we just pointed the wheels in a direction and drove straight
+        //But this doesn't work well when combined with the SwerveDriveOdometry
+        //Becase what happens is that sometimes we point the wheels 180 degrees from where they are supposed to be
+        //And run the motor backwards
+        //By doing the ABS here it looks like we are running the motor forwards
+        //And as a result the odometry thinks that this wheel is doing the opposte of what it actualy is
+		//double distanceTravelled = Math.abs(numberOfWheelRotations * Math.PI * mWheelDiameter);
+        double distanceTravelled = numberOfWheelRotations * Math.PI * mWheelDiameter;
 		return  distanceTravelled;
 		
 
 	}
 
 	public double GetDistanceTravelled()
-	{
-		return ConvertDriveEncoderToDistanceTravelled(this.mFalcon.getRotorPosition().getValue());
+	{        
+        
+
+		return ConvertDriveEncoderToDistanceTravelled(this.mFalcon.getRotorPosition().getValue() - mRotorValueToExcludeFromReset);
 	}
 
 

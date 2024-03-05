@@ -5,5 +5,6 @@ public enum ShooterMode {
     HighGoalManual,
     HighGoalDriveBy,
     LowGoal,
-    AutoAim
+    AutoAim,
+    TrapShooting
 }

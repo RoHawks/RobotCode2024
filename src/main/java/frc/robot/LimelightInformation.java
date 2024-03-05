@@ -6,21 +6,39 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LimelightInformation {
-    private static double[] mCameraPoseTargetSpace;
+
+    private String mName;
+    private String mID;
+    private String mHostname;
+
+    public LimelightInformation(String pName, String pID)
+    {
+        mName = pName;
+        mID = pID;
+        mHostname = "limelight-" + pID;
+    }
+
+    private double[] mCameraPoseTargetSpace;
 
 
-    public static void calculateCameraPoseTargetSpace()
+    public void calculateCameraPoseTargetSpace(double pHorizontalOffsetMeters)
     {
         try
         {
-            NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-            NetworkTableEntry jsonNTE = table.getEntry("json");
-            String json_dump = jsonNTE.getString("null");
-
+            NetworkTable table = NetworkTableInstance.getDefault().getTable(mHostname);
+           
+            //NetworkTableEntry jsonNTE = table.getEntry("json");
+           
+            //String json_dump = jsonNTE.getString("null");
+           
             
-            double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
+            //double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
+            double[] camerapose_targetspace = table.getValue("camerapose_targetspace").getDoubleArray();
+            SmartDashboard.putNumber("hereD", System.currentTimeMillis());
+
             if (camerapose_targetspace != null)
             {
+                camerapose_targetspace[0] += pHorizontalOffsetMeters;
                 mCameraPoseTargetSpace = camerapose_targetspace;
             }
             else
@@ -38,9 +56,12 @@ public class LimelightInformation {
         }
     }
 
+
+    /* */
     private static double[] getCameraPoseTargetSpace(String json)
     {
-      // try {
+        SmartDashboard.putString("json", json);
+       try {
         int idx1 = json.indexOf("t6c_ts");
         int idx2 = json.indexOf("t6r_fs");
         if (idx1 > 0 && idx2 > 0)
@@ -59,15 +80,16 @@ public class LimelightInformation {
           return double_array;
         }
         return null;
-      // }
-      // catch (Exception e) {
-      //   throw e;
-       
-      // }
+       }
+       catch (Exception e) {
+        SmartDashboard.putString("cameraPostException", e.getLocalizedMessage());
+        return null;
+       }
       
     }
+    
 
-    public static double[] getCameraPoseTargetSpace()
+    public double[] getCameraPoseTargetSpace()
     {
         return mCameraPoseTargetSpace;
     }

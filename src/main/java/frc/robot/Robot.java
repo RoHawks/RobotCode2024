@@ -11,15 +11,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
+import robosystems.Lights;
 import robosystems.Shooter;
+import robotcode.autonomous.AutonomousRoutine;
+import robotcode.autonomous.RoutineFactory;
+import states.ApproachingClimberControls;
 import states.HoldingState;
 import states.IntakingState;
 import states.NextStateInfo;
+import states.ShooterMode;
 import states.ShootingState;
 import states.StateMachine;
-import states.TestControls;
+// import states.TestControls;
 import states.JoystickControlsWithSwerve;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.math.controller.PIDController;
@@ -27,8 +33,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.AddressableLED;
-import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import universalSwerve.SwerveDrive;
@@ -81,8 +87,10 @@ public class Robot extends TimedRobot
   private ExtendoArm mExtendoArm;
   private Intake mIntake;
   private Shooter mShooter;
+  private Lights mLights;
+  private LimelightManager mLimelightManager;
+  private ClimberArms mClimberArms;
 
-  
   private boolean mAnglerMotorAndGyroZeroingHasOccurred;
   private IntakingState mIntakingState;
   private HoldingState mHoldingState;
@@ -103,9 +111,7 @@ public class Robot extends TimedRobot
   
   private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, false, false, false);
   
-  private AddressableLED mLeds;
-  private AddressableLEDBuffer mLedBuffer;
-  
+
 
   public Robot()
   {
@@ -170,10 +176,14 @@ public class Robot extends TimedRobot
 
   private void CreateMainComponents()
   {
+    mLimelightManager = new LimelightManager();
+    mLights = new Lights();
     mIntake = new Intake();
-    mShooter = new Shooter();
+    mShooter = new Shooter(mLimelightManager);
     mExtendoArm = new ExtendoArm();
+    mClimberArms = new ClimberArms();
     mSwerveDrive = SwerveFactory.Create2024Swerve();
+    
 
     mLeftClimberMotor = new TalonFX(11);
     mRightClimberMotor = new TalonFX(12);
@@ -193,6 +203,8 @@ public class Robot extends TimedRobot
     mJoystickSwerveControls = new JoystickSwerveControls(mMainController);
   }
 
+  
+  private AutonomousRoutine mAutonomousRoutine;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -201,6 +213,8 @@ public class Robot extends TimedRobot
   @Override
   public void robotInit() {
     mMainController = new XboxController(0);
+
+    
     // mPigeon2 = new CorePigeon2(22);
 
     mAnglerMotorAndGyroZeroingHasOccurred = false;
@@ -208,8 +222,9 @@ public class Robot extends TimedRobot
     CreateControls();
 
     XboxController alternateController = new XboxController(1);
+    
     JoystickControlsWithSwerve testControls = new JoystickControlsWithSwerve(mMainController, alternateController);
-    mStateMachine = new StateMachine(testControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, null);
+    mStateMachine = new StateMachine(testControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, mClimberArms, mLights, mLimelightManager);
     // mIntakingState = new IntakingState(mSwerveDrive, mIntake, mShooter, testControls);
     // mHoldingState = new HoldingState(mSwerveDrive, mIntake, mShooter, testControls);
     // mShootingState = new ShootingState(mSwerveDrive, mIntake, mShooter, testControls);
@@ -221,7 +236,9 @@ public class Robot extends TimedRobot
     playStartupMusic();
     */
     
-    traj = Choreo.getTrajectory("SimpleTestPath");
+    ApproachingClimberControls.setInstanceInformation(mMainController, alternateController);
+
+    traj = Choreo.getTrajectory("NewPath");
 
     m_field.getObject("traj").setPoses(
       traj.getInitialPose(), traj.getFinalPose()
@@ -232,19 +249,17 @@ public class Robot extends TimedRobot
 
     SmartDashboard.putData(m_field);
 
-    mLeds = new AddressableLED(9);
-    mLedBuffer = new AddressableLEDBuffer(18);
-    mLeds.setLength(mLedBuffer.getLength());    
+
+    CreateChoreoCommand();
+
+    robotcode.autonomous.RoutineFactory routineFactory = new robotcode.autonomous.RoutineFactory(mSwerveDrive, mShooter, mIntake);
+    mAutonomousRoutine = routineFactory.FourCloseRingAuto();
+
     
 
 
 
-    teleopInit();
-
-
-
-    CreateChoreoCommand();
-
+    //DataLogManager.start();
   }
 
   /*
@@ -265,8 +280,37 @@ public class Robot extends TimedRobot
 
   public void robotPeriodic()
   {
-    LimelightInformation.calculateCameraPoseTargetSpace();
-    //LogMotorAndSensorBasics();
+    mLimelightManager.calculateCameraPoseTargetSpace();
+    double[] cameraResultsWest = mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.WEST_CAMERA);
+    double[] cameraResultsEast = mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.EAST_CAMERA);
+    
+    if(cameraResultsWest != null)
+    {
+      SmartDashboard.putNumber("LL_West_JSON_0", cameraResultsWest[0]);
+      SmartDashboard.putNumber("LL_West_JSON_2", cameraResultsWest[2]);
+    }
+    else
+    {
+      SmartDashboard.putNumber("LL_West_JSON_0",-1);
+      SmartDashboard.putNumber("LL_West_JSON_2", -1);
+    }
+
+    if(cameraResultsEast != null)
+    {
+      SmartDashboard.putNumber("LL_East_JSON_0", cameraResultsEast[0]);
+      SmartDashboard.putNumber("LL_East_JSON_2", cameraResultsEast[2]);
+    }
+    else
+    {
+      SmartDashboard.putNumber("LL_East_JSON_0",-1);
+      SmartDashboard.putNumber("LL_East_JSON_2", -1);
+    }
+    
+    if(cameraResultsWest != null && cameraResultsEast != null)
+    {
+      SmartDashboard.putNumber("LL_East_0_Delta", cameraResultsEast[0] - cameraResultsWest[0]);
+    }
+    
   }
 
   
@@ -284,7 +328,7 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousInit() 
   {
-    mLeds.start();
+
   
     
   }
@@ -292,7 +336,12 @@ public class Robot extends TimedRobot
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    
+    if (!mAnglerMotorAndGyroZeroingHasOccurred)
+    {
+      zeroAnglerEncoderAndGyro();
+      return;
+    }
+    mAutonomousRoutine.Run();
   }
 
   /** This function is called once when teleop is enabled. */
@@ -304,126 +353,11 @@ public class Robot extends TimedRobot
     mSwerveDrive.EnableDiagnostics(WheelLabel.SE);
     mSwerveDrive.EnableDiagnostics(WheelLabel.SW);
 
-    mLeds.start();
+
 
   }
   {
-  /*
-  private void AnglerSimplePID()
-  {
-    double triggers = mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis();
-    if(triggers > 0.05 || triggers < -0.05)
-    {
-      mAngler.set(triggers);
-    }
-    else
-    {
-      double setpoint = 60;//meaningless default
-      boolean isButtonPressed = false;
-      if(mMainController.getYButton())
-      {
-        setpoint = 100;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getBButton())
-      {
-        setpoint = 50;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getAButton())
-      {
-        setpoint = 30;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getXButton())
-      {
-        setpoint = 140;
-        isButtonPressed = true;
-      }
-
-      if(isButtonPressed)
-      {
-        if(Math.abs(mAnglerEncoder.getPosition() - setpoint) < 0.5)
-        {
-          mAngler.stopMotor();  //break mode will generally hold us in place without drawing any current
-        }
-        else
-        {
-          mAngler.getPIDController().setReference(setpoint, ControlType.kPosition);
-        }
-      }
-      else
-      {
-        mAngler.stopMotor();
-      }
-    }
-  }
-
-  private void AnglerBasicTest()
-  {
-    mAngler.set(mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis() );
-  }
-
-  private void ExtendoArmSimplePID()
-  {
-    double triggers = mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis();
-    if(triggers > 0.05 || triggers < -0.05)
-    {
-      mExtendoArm.set(triggers);
-    }
-    else
-    {
-      double setpoint = -1000;//meaningless default
-      boolean isButtonPressed = false;
-      if(mMainController.getYButton())
-      {
-        setpoint = -1200;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getBButton())
-      {
-        setpoint = -900;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getAButton())
-      {
-        setpoint = -1800;
-        isButtonPressed = true;
-      }
-      else if(mMainController.getXButton())
-      {
-        setpoint = -300;
-        isButtonPressed = true;
-      }
-
-      if(isButtonPressed)
-      {
-        if(Math.abs(mAnglerEncoder.getPosition() - setpoint) < 10.0)
-        {
-          mExtendoArm.stopMotor();  //break mode will generally hold us in place without drawing any current
-        }
-        else
-        {
-          mExtendoArm.getPIDController().setReference(setpoint, ControlType.kPosition);
-        }
-      }
-      else
-      {
-        mExtendoArm.stopMotor();
-      }
-    }
-  }
-
-  private void ExtendoArmBasicTest()
-  {
-     mExtendoArm.set(mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis());
-  }
-
-  private void SwerveTest()
-  {
-    mSwerveDrive.Run(mJoystickSwerveControls);
-  }
-  */
+  
   }
   private void TestAngler()
   {    
@@ -498,7 +432,7 @@ public class Robot extends TimedRobot
       }
       else if(mMainController.getBButton())
       {
-        mIntake.setToEjectingSpeed();
+        mIntake.setToFirstEjectingSpeed();
         isButtonPressed = true;
       }
       else if(mMainController.getAButton())
@@ -601,7 +535,7 @@ public class Robot extends TimedRobot
 
   public void logLimeLightInfo()
   {
-    double[] camerapose_targetspace = LimelightInformation.getCameraPoseTargetSpace();
+    double[] camerapose_targetspace = mLimelightManager.getCameraPoseTargetSpace();
     if (camerapose_targetspace != null)
     {
       SmartDashboard.putNumber("Lime: X change since last TS", camerapose_targetspace[0] - lastRecordedX);
@@ -648,6 +582,7 @@ public class Robot extends TimedRobot
         mShooter.setAnglerSpeed(0);
         mShooter.zeroAnglerMotorInformation();
         Constants.setLowGoalRotation();
+        mSwerveDrive.InitializeOdometry();
       }
     }
     else
@@ -663,49 +598,45 @@ public class Robot extends TimedRobot
   private double mPosition = -800;
   public void teleopPeriodic()
   {
+    
+    // if (mMainController.getAButton())
+    // {
+    //   mClimberArms.setSpeed(0.2);
+    // }
+    // else if (mMainController.getBButton())
+    // {
+    //   mClimberArms.setSpeed(-0.2);
+    // }
+    // else
+    // {
+    //   mClimberArms.setSpeed(0);
+    // }
+
+    // mSwerveDrive.Run(ApproachingClimberControls.Instance);
+    // boolean mFinishedRetracting = mClimberArms.retract();
+      
+    // SmartDashboard.putBoolean("Climber: mFinishedRetracting", mFinishedRetracting);
+    // SmartDashboard.putNumber("Right Climber Position", mClimberArms.getRightPosition());
+
+
+    mStateMachine.Run();
+
+    // mSwerveDrive.Run(ApproachingClimberControls.Instance);
+    // boolean mFinishedRetracting = mClimberArms.retract();
+    // // boolean mFinishedExtending = mClimberArms.extend();
+    // mShooter.goToTrapShootAngle();
+
+    // mShooter.goToTrapShootAngle();
+
+
+    /* 
     // mSwerveDrive.Run(mJoystickSwerveControls);
     long entryTime = System.currentTimeMillis();
     SmartDashboard.putNumber("TimeBetweenCallsToTeleopPeriodic", mLastEntryTime - entryTime);
     mShooter.logShooterAngle();
     mLastEntryTime = entryTime;
    
-   /* 
-    if (mMainController.getYButton())
-    {
-      mRightClimberMotor.set(0.2);
-    }
-    else if (mMainController.getXButton())
-    {
-      mRightClimberMotor.set(-0.2);
-    }
-    else
-    {
-      mRightClimberMotor.set(0);
-    }
-
-    if (mMainController.getBButton())
-    {
-      mLeftClimberMotor.set(-0.2);
-    }
-    else if (mMainController.getAButton())
-    {
-      mLeftClimberMotor.set(0.2);
-    }
-    else
-    {
-      mLeftClimberMotor.set(0);
-    }
-*/
-    
-
-    
-    
-    // SmartDashboard.putNumber("New Gyro Roll", mPigeon2.getRoll().getValueAsDouble());
-    // SmartDashboard.putNumber("New Gyro Yaw", mPigeon2.getYaw().getValueAsDouble());
-    // SmartDashboard.putNumber("New Gyro Pitch", mPigeon2.getPitch().getValueAsDouble());
-    
-
-
+ 
     
     logLimeLightInfo();
       mSwerveDrive.LogDiagnostics();
@@ -728,6 +659,7 @@ public class Robot extends TimedRobot
     long exitTime = System.currentTimeMillis();
 
     SmartDashboard.putNumber("TimeOfTelopPeriodic", exitTime - entryTime);
+    */
     
   
   }
@@ -744,7 +676,7 @@ public class Robot extends TimedRobot
   @Override
   public void testInit() 
   {
-    mLeds.start();
+
 
   }
 
@@ -752,15 +684,40 @@ public class Robot extends TimedRobot
   @Override
   public void testPeriodic() 
   {
-    testChoreo1();
-       
-    /*
-    for (var i = 0; i < mLedBuffer.getLength(); i++) 
-    {      
-      mLedBuffer.setRGB(i, 255, 0, 0);
+    // if (!mAnglerMotorAndGyroZeroingHasOccurred)
+    // {
+    //   zeroAnglerEncoderAndGyro();
+    //   return;
+    // }
+    // mSwerveDrive.Run(mJoystickSwerveControls);
+    mIntake.setToNormalIntakingSpeed();
+    // testChoreo1();
+    if (mMainController.getAButton())
+    {
+      mClimberArms.setSpeed(0.2);
     }
-    mLeds.setData(mLedBuffer);
-    */
+    else if (mMainController.getBButton())
+    {
+      mClimberArms.setSpeed(-0.2);
+    }
+    else
+    {
+      mClimberArms.setSpeed(0);
+    }
+
+    if (mMainController.getXButton())
+    {
+      mShooter.setAnglerSpeed(-0.2);
+    }
+    else if (mMainController.getYButton())
+    {
+      mShooter.setAnglerSpeed(0.2);
+    }
+    else
+    {
+      mShooter.setAnglerSpeed(0);
+    }
+    
     //testChoreo1();
 
     //testLowGoal();
@@ -787,10 +744,10 @@ public class Robot extends TimedRobot
         traj, // Choreo trajectory from above
         mSwerveDrive::getPose, // A function that returns the current field-relative pose of the robot: your
                                // wheel or vision odometry
-        new PIDController(0.5, 0.0, 0.0), // PIDController for field-relative X
+        new PIDController(0.1, 0.0, 0.0), // PIDController for field-relative X
                                                                                    // translation (input: X error in meters,
                                                                                    // output: m/s).
-        new PIDController(0.5, 0.0, 0.0), // PIDController for field-relative Y
+        new PIDController(0.1, 0.0, 0.0), // PIDController for field-relative Y
                                                                                    // translation (input: Y error in meters,
                                                                                    // output: m/s).
         thetaController, // PID constants to correct for rotation
@@ -818,18 +775,13 @@ public class Robot extends TimedRobot
   
 
 
-  private void testLEDs()
-  {
-
-  }
-
   private Field2d m_field = new Field2d();
   private ChoreoTrajectory traj;
   private boolean mHasStartedTrajectory = false;
   private Timer mTimer = new Timer();
   private void testChoreo1()
   {
-    mSwerveDrive.UpdateOdometry();
+
     
     if(mMainController.getAButton())
     {
@@ -837,13 +789,16 @@ public class Robot extends TimedRobot
       {
         //I guess this assumes that you're starting from the right odometry?
         //Not quite sure.  Only should do this at the start of the trajectory, presumably.
-        mSwerveDrive.ResetOdometry(traj.getInitialPose()); 
+        
         mHasStartedTrajectory = true;
         mTimer = new Timer();
         mTimer.start();
         mChoreoCommand.initialize();
+        mSwerveDrive.ResetDistanceTravelled();
+        mSwerveDrive.ResetOdometry(traj.getInitialPose());         
         
       }
+      mSwerveDrive.UpdateOdometry();
       mChoreoCommand.execute();
       ChoreoTrajectoryState desiredCurrentState = traj.sample(mTimer.get());
       SmartDashboard.putNumber("Choreo_desiredCurrentState.x", desiredCurrentState.x);
@@ -853,13 +808,14 @@ public class Robot extends TimedRobot
       SmartDashboard.putNumber("Choreo_desiredCurrentState.velocityY", desiredCurrentState.velocityY);
       SmartDashboard.putNumber("Choreo_desiredCurrentState.angularVelocity", desiredCurrentState.angularVelocity);
 
-      
+      SmartDashboard.putNumber("mSwerveDrive.getPose().getY()", mSwerveDrive.getPose().getY());
+      SmartDashboard.putNumber("mSwerveDrive.getPose().getX()", mSwerveDrive.getPose().getX());
 
       
     }
     else
     {
-      mChoreoCommand.cancel();
+      //mChoreoCommand.cancel();
       mHasStartedTrajectory = false;
       mSwerveDrive.StopEverything();
     }

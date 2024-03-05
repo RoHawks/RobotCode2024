@@ -22,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import odomoteryLogging.OdometryLogging_SwerveDriveOdometry;
 import universalSwerve.utilities.SwerveNudgingDirection;
 
 public class SwerveDrive 
@@ -54,6 +55,7 @@ public class SwerveDrive
 
     private boolean mDiagnosticsEnabled = false;
 
+    //private OdometryLogging_SwerveDriveOdometry mOdometry;
     private SwerveDriveOdometry mOdometry;
 
 	public enum DrivingStyle
@@ -90,9 +92,15 @@ public class SwerveDrive
         mAngleTrackController = new PIDController(0.1, 0, 0);
         mAngleTrackController.enableContinuousInput(0, 360);
 
+
         Initialize();
 
-         //Swerve Drive Odometry Code add for Choreo
+
+    }
+
+    public void InitializeOdometry()
+    {
+        //Swerve Drive Odometry Code add for Choreo
         //Adapted from https://github.com/SleipnirGroup/ChoreoSwerveBot/blob/main/src/main/java/frc/robot/subsystems/DriveSubsystem.java#L111
         mOdometry = new SwerveDriveOdometry(
           mSwerveDriveKinematics,
@@ -110,22 +118,46 @@ public class SwerveDrive
     //This should be called in each main loop iteration of the program.
     public void UpdateOdometry()
     {
-
-        mOdometry.update(
-        new Rotation2d(
-                Math.toRadians(
-                    AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles(mGyroscope.GetCurrentAngle()))), //hmmm has this been initialized  yet?  
-            new SwerveModulePosition[] {
+        SwerveModulePosition[] swerveModulePositions = new SwerveModulePosition[] {
             mNEWheel.GetPosition(),
             mSEWheel.GetPosition(),
             mSWWheel.GetPosition(),
             mNWWheel.GetPosition()
-            });
+            };
+
+        /*
         
+        SmartDashboard.putNumber("UpdateOdometry_NE_distance", swerveModulePositions[0].distanceMeters);
+        SmartDashboard.putNumber("UpdateOdometry_NE_angle", swerveModulePositions[0].angle.getDegrees());
+
+        SmartDashboard.putNumber("UpdateOdometry_SE_distance", swerveModulePositions[1].distanceMeters);
+        SmartDashboard.putNumber("UpdateOdometry_SE_angle", swerveModulePositions[1].angle.getDegrees());
+
+        SmartDashboard.putNumber("UpdateOdometry_SW_distance", swerveModulePositions[2].distanceMeters);
+        SmartDashboard.putNumber("UpdateOdometry_SW_angle", swerveModulePositions[2].angle.getDegrees());
+
+        SmartDashboard.putNumber("UpdateOdometry_NW_distance", swerveModulePositions[3].distanceMeters);
+        SmartDashboard.putNumber("UpdateOdometry_NW_angle", swerveModulePositions[3].angle.getDegrees());
+        */
+
+        double gyroAngle = mGyroscope.GetCurrentAngle();
+        double convertedAngle = AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles(gyroAngle);
+        /*
+        SmartDashboard.putNumber("UpdateOdometry_gyroAngle", gyroAngle);
+        SmartDashboard.putNumber("UpdateOdometry_GyroInSwerveKinematics", convertedAngle);
+        */
+
+        mOdometry.update(
+        new Rotation2d(
+                Math.toRadians(convertedAngle)), //hmmm has this been initialized  yet? 
+                    swerveModulePositions 
+            );
+        
+        /*
         SmartDashboard.putNumber("Choreo_CurrentOdometry_X", mOdometry.getPoseMeters().getX());
         SmartDashboard.putNumber("Choreo_CurrentOdometry_Y", mOdometry.getPoseMeters().getY());
         SmartDashboard.putNumber("Choreo_CurrentOdometry_Rotation", mOdometry.getPoseMeters().getRotation().getDegrees());
-
+        */
     }
 
     public void ResetOdometry(Pose2d pose)
@@ -214,11 +246,9 @@ public class SwerveDrive
         if(USE_DISCRETIZER)
         {
             mLastRequestedChassisSpeeds = discretize(requestedChassisSpeeds.vxMetersPerSecond, requestedChassisSpeeds.vyMetersPerSecond,
-                requestedChassisSpeeds.omegaRadiansPerSecond , 0.02);
+                requestedChassisSpeeds.omegaRadiansPerSecond , 0.005);
 
-            return mSwerveDriveKinematics.toSwerveModuleStates( 
-                discretize(requestedChassisSpeeds.vxMetersPerSecond, requestedChassisSpeeds.vyMetersPerSecond,
-                requestedChassisSpeeds.omegaRadiansPerSecond , 0.02)); // the 0.02 is the loop timing (20ms)
+            return mSwerveDriveKinematics.toSwerveModuleStates( mLastRequestedChassisSpeeds); // the 0.02 is the loop timing (20ms) ...//changed to 0.005 based on our new setup timing to be 5ms
         }
         else
         {
@@ -394,7 +424,8 @@ public class SwerveDrive
 		// the states/targets have been calculated above, now assign
         //ATS Added for NY:
         //ATS 12/11/2023...  Why do we NOT do this??  Not sure why this is commented out.  Need to experiment.
-        //targetModelStates = DesaturateWheelSpeeds(targetModelStates);
+        //ATS, added this back in on 3/4/2024, need to test
+        targetModelStates = DesaturateWheelSpeeds(targetModelStates);
         for(int i = 0; i < mWheels.length; i++)
 		{			
             //if(i==3)//just test NW
@@ -483,6 +514,17 @@ public class SwerveDrive
         {
             mAngleTrackController.setSetpoint(pAngleToTrack);
             computedRotationSpeedPercentage = mAngleTrackController.calculate(mGyroscope.GetCurrentAngle());
+            //ATS 3/4:
+            //This can be rather extreme if you are way away from the target.  So let's limit it to be what you see at 90 off of setpoint degrees, currently.
+            if(computedRotationSpeedPercentage < -90.0*0.1) //.1 is the P
+            {
+                computedRotationSpeedPercentage = -90.0*0.1;
+            }
+            else if(computedRotationSpeedPercentage > 90.0 * 0.1)
+            {
+                computedRotationSpeedPercentage = 90.0 * 0.1;
+            }
+        
         }
         else
         {

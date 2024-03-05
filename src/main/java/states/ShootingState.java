@@ -9,12 +9,13 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
-import frc.robot.LimelightInformation;
+import frc.robot.LimelightManager;
 import robosystems.Shooter;
+import robosystems.Lights.LightingScheme;
 import states.IntakingState.IntakeMode;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
-
+import robosystems.Lights;
 import universalSwerve.SwerveDrive;
 
 
@@ -25,9 +26,10 @@ public class ShootingState extends AState {
     private Shooter mShooter;
     private ExtendoArm mExtendoArm;
     private Controls mControls;
-
+    private Lights mLights;
     private ShooterMode mShooterMode;
     private double mTimeStartedToShoot;
+    private LimelightManager mLimelightManager;
 
     private boolean mHasShot;
 
@@ -36,7 +38,9 @@ public class ShootingState extends AState {
         Intake pIntake,
         Shooter pShooter,
         ExtendoArm pExtendoArm,
-        Controls pControls
+        Controls pControls,
+        Lights pLights,
+        LimelightManager pLimelightManager
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -47,6 +51,8 @@ public class ShootingState extends AState {
             mShooterMode = ShooterMode.HighGoalDriveBy;
             mTimeStartedToShoot = -1;
             mHasShot = false;
+            mLights = pLights;
+            mLimelightManager = pLimelightManager;
         }
        
         
@@ -83,13 +89,13 @@ public class ShootingState extends AState {
 
     @Override
     public NextStateInfo Run() {
-        // ATS commented out for tests!
+        
         ChassisSpeeds chassisSpeeds = mSwerveDrive.getLastRequestedChassisSpeeds();
 
         logShootingStateInformation();
         checkForShootingPreperationButtons();
         mShooter.setAngleBasedOnShooterMode(mShooterMode, chassisSpeeds);
-        
+        mLights.Run();
         
 
         if (mShooterMode == ShooterMode.LowGoal)
@@ -97,12 +103,14 @@ public class ShootingState extends AState {
             mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
             mExtendoArm.lowGoalExtension();
             mShooter.spinUpToLowGoalSpeed();
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
         }
         else if (mShooterMode == ShooterMode.HighGoalManual)
         {
             mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
             mExtendoArm.retract();
             mShooter.spinUpToHighGoalSpeed();
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
         }
         else if (mShooterMode == ShooterMode.AutoAim)
         {
@@ -123,9 +131,13 @@ public class ShootingState extends AState {
         double adjustedCenter = -1;
         if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
-            double[] cameraPositionInTargetSpace = LimelightInformation.getCameraPoseTargetSpace();
+            double[] cameraPositionInTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
             if (cameraPositionInTargetSpace != null)
             {
+                if(!mHasShot)
+                {
+                    mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
+                }
                 value = cameraPositionInTargetSpace[0];
                 SmartDashboard.putNumber("Lime: X Displacement", value);
 
@@ -152,6 +164,10 @@ public class ShootingState extends AState {
             }
             else
             {
+                if(!mHasShot)
+                {
+                    mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
+                }
                 cameraInLeftRightRange = false;
                 highGoalDriveByExtensionConditonsMet = false;
             }
@@ -197,6 +213,7 @@ public class ShootingState extends AState {
                     mSwerveDrive.TurnAllWheels(270);
                 }
             } 
+            mLights.SetLightingScheme(LightingScheme.Shooting);
             mIntake.setToLaunchingNoteIntoTheShooterSpeed();
         }
         else

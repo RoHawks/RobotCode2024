@@ -6,9 +6,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 import robosystems.Shooter;
+import robosystems.Lights.LightingScheme;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
-
+import robosystems.Lights;
 import universalSwerve.SwerveDrive;
 
 
@@ -19,6 +20,7 @@ public class IntakingState extends AState {
     private Shooter mShooter;
     private ExtendoArm mExtendoArm;
     private Controls mControls;
+    private Lights mLights;
 
     private IntakeMode mIntakeMode;
     private ShooterMode mShooterMode;
@@ -34,7 +36,8 @@ public class IntakingState extends AState {
         Intake pIntake,
         Shooter pShooter,
         ExtendoArm pExtendoArm,
-        Controls pControls
+        Controls pControls,
+        Lights pLights
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -44,6 +47,7 @@ public class IntakingState extends AState {
             mControls = pControls;   
             mIntakeMode = IntakeMode.NormalIntaking;
             mShooterMode = ShooterMode.HighGoalDriveBy;
+            mLights = pLights;
         }
     
     
@@ -65,11 +69,12 @@ public class IntakingState extends AState {
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0,0);
         mExtendoArm.retract();
-        
+        mLights.SetLightingScheme(LightingScheme.Intaking);
+        mLights.Run();
+
         if (mIntakeMode == IntakeMode.NormalIntaking)
         {
-            
-            if (GetTimeSinceEntry() < 1000)
+            if (GetTimeSinceEntry() < 400)
             {
                 mIntake.setToHoldingSpeed();
             }
@@ -80,7 +85,7 @@ public class IntakingState extends AState {
         }
         else if (mIntakeMode == IntakeMode.Ejecting)
         {
-            mIntake.setToEjectingSpeed();
+            mIntake.setToFirstEjectingSpeed();
         } 
         
         
@@ -113,6 +118,12 @@ public class IntakingState extends AState {
         checkForShootingPreperationButtons();
         
 
+        if (mControls.GetPrepareToClimb())
+        {
+            return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
+        }
+
+
         if (mIntake.getBreakBeamStatus())
         {
             mIntake.recordPositionAtBreakBeam();
@@ -144,6 +155,19 @@ public class IntakingState extends AState {
         }
     }
 
+    public void checkForForceEjectionMode(){
+        if(mControls.GetForceEjectionMode()){
+            mIntakeMode = IntakeMode.Ejecting;
+        }
+    }
+
+    public void checkForForceIntakingMode(){
+        if(mControls.GetForceIntakingMode()){
+            mIntakeMode = IntakeMode.NormalIntaking;
+        }
+    }
+
+
     private void setIntakingMode(IntakeMode pIntakeMode)
     {
         mIntakeMode = pIntakeMode;
@@ -155,6 +179,7 @@ public class IntakingState extends AState {
         super.EnterState(pEntryParameter);
         //For normal usage
         setIntakingMode(IntakeMode.NormalIntaking);
+        mLights.SetLightingScheme(LightingScheme.Intaking);
         if (pEntryParameter instanceof ShooterMode)
         {
             mShooterMode = (ShooterMode) pEntryParameter;

@@ -6,89 +6,62 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import universalSwerve.utilities.SwerveNudgingDirection;
 
 
-public class JoystickControlsWithSwerve implements Controls {
+public class ApproachingClimberControls extends JoystickControlsWithSwerve {
 
-    XboxController mMainController; 
-    XboxController mAlternateController; 
 
-    public JoystickControlsWithSwerve(XboxController pMainController, XboxController pAlternateController)
+    double mTimeEnteredClimbPrep; 
+
+    public static ApproachingClimberControls Instance;
+
+    public static void setInstanceInformation(XboxController pMainController, XboxController pAlternateController)
     {
-        mMainController = pMainController;
-        mAlternateController = pAlternateController;
+        Instance = new ApproachingClimberControls(pMainController, pAlternateController);
+        Instance.setTimeSinceEnteredClimbingState(System.currentTimeMillis());
     }
 
-    @Override
-    public boolean GetForceIntakingMode() {
-        return mAlternateController.getLeftBumper();
-    }
-
-    @Override
-    public boolean GetForceEjectionMode() {
-       return mAlternateController.getRightBumper();
-    }
-
-    @Override
-    public boolean GetPrepareForHighGoalManual() {
-        return false; //mAlternateController.getLeftBumper();
-     
-    }
-
-    @Override
-    public boolean GetPrepareForHighGoalDriveBy() {
-        SmartDashboard.putBoolean("High Goal Drive", mAlternateController.getXButton());
-        return false; //mAlternateController.getXButton();
-    }
-
-    @Override
-    public boolean GetPrepareForLowGoal() {
-        return mAlternateController.getAButton();
-    }
-
-    @Override
-    public boolean GetPrepareForAutoAim() {
-        // return mController.getBButton();
-        return false;
-    }
-
-    @Override
-    public boolean GetStartShootingSequence() {
-        // return mMainController.getLeftBumper() && mMainController.getRightBumper();
-        return mAlternateController.getBButton();
-    }
-
-    
-    public boolean GetPrepareToClimb() {
-        return mAlternateController.getYButton();
-    }
-
-    public boolean GetRetractClimb()
+    private ApproachingClimberControls(XboxController pMainController, XboxController pAlternateController)
     {
-        return mAlternateController.getXButton();
+        super(pMainController, pAlternateController);
+        
     }
+
+    public void setTimeSinceEnteredClimbingState(double pTime)
+    {
+        mTimeEnteredClimbPrep = pTime;
+    }
+
+    public double turnTimeIntoScalingValue(double pTime)
+    {
+        double scalingValue = Math.min(Math.max(0.5, 1 - (System.currentTimeMillis() - mTimeEnteredClimbPrep)/1000.0 * 0.5),1);
+        SmartDashboard.putNumber("scalingVal", scalingValue);
+        return scalingValue;
+    }
+
+
 
 
     public double GetSwerveXComponent()
     {
-        return mMainController.getLeftX();
+        return mMainController.getLeftX() * turnTimeIntoScalingValue(mTimeEnteredClimbPrep);
     }
 
     public double GetSwerveYComponent()
     {
-        return mMainController.getLeftY();
+        return mMainController.getLeftY() * turnTimeIntoScalingValue(mTimeEnteredClimbPrep);
     }
 
     public double GetSwerveLinearSpeed()
     {
         //square to allow for easy speed control on low speeds
         double triggerValue = mMainController.getRightTriggerAxis();
-        return 1.0 * triggerValue * triggerValue;
+        return 1.0 * triggerValue * triggerValue * turnTimeIntoScalingValue(mTimeEnteredClimbPrep);
     }
 
     public double GetSwerveRotationalSpeed()
     {
         //Let's try squaring this for finer grained slowcontrol
         double rawVal = mMainController.getRightX();
-        return rawVal > 0 ? rawVal * rawVal : -1.0 * rawVal * rawVal; 
+        return rawVal > 0 ? rawVal * rawVal : -1.0 * rawVal * rawVal;
     }
 
 

@@ -4,5 +4,9 @@ public enum States
 {  
     Intaking,
     Holding,    
-    Shooting  
+    Shooting, 
+    ClimbingPreparation, 
+    Climbing, 
+    TrapShooting,
+    Ejecting
 }

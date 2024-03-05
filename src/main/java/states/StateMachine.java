@@ -5,6 +5,7 @@ import java.util.Map;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.LimelightManager;
 import robosystems.*;
 import universalSwerve.SwerveDrive;
 import universalSwerve.SwerveFactory;
@@ -16,18 +17,29 @@ public class StateMachine
     
 
     
-    public StateMachine(Controls pControls, SwerveDrive pSwerveDrive, Intake pIntake, Shooter pShooter, ExtendoArm pExtendoArm, ClimberArms pClimberArms)
+    public StateMachine(Controls pControls, SwerveDrive pSwerveDrive, Intake pIntake, Shooter pShooter, ExtendoArm pExtendoArm, ClimberArms pClimberArms, Lights pLights, LimelightManager pLimelightManager)
     {     
         mStates = new HashMap<States, AState>();
 
-        IntakingState intakingState = new IntakingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls);
+        IntakingState intakingState = new IntakingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
         mStates.put(intakingState.GetState(), intakingState);
 
-        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls);
+        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
         mStates.put(holdingState.GetState(), holdingState);
 
-        ShootingState shootingState = new ShootingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls);
+        ShootingState shootingState = new ShootingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager);
         mStates.put(shootingState.GetState(), shootingState);
+
+        ClimbingState climbingState = new ClimbingState(pSwerveDrive, pClimberArms, pShooter, pIntake);
+        mStates.put(climbingState.GetState(), climbingState);
+
+        ClimbingPreparationState climbingPreparationState = new ClimbingPreparationState(pSwerveDrive, pClimberArms, pShooter, pControls, pIntake);
+        mStates.put(climbingPreparationState.GetState(), climbingPreparationState);
+
+        TrapShootingState trapShootingState = new TrapShootingState(pControls);
+        mStates.put(trapShootingState.GetState(), trapShootingState);
+
+        
 
         
         mCurrentState = intakingState.GetState();

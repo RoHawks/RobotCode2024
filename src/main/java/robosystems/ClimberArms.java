@@ -1,110 +1,122 @@
 package robosystems;
 
 
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
+
+
+
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import frc.robot.Constants;
 
 
 
 public class ClimberArms {
-    private CANSparkMax mLeftDrumMotor;
-    private CANSparkMax mRightDrumMotor;
-    private RelativeEncoder mLeftEncoder;
-    private RelativeEncoder mRightEncoder;
+    private TalonFX mLeftDrumMotor;
+    private TalonFX mRightDrumMotor;
 
-    private final int LEFT_CAN_ID = 11;
-    private final int RIGHT_CAN_ID = 12;
 
-    private double EXTEND_TARGET_POSITION = 0;
-    private double RETRACT_TARGET_POSITION = 0;
+    private double EXTEND_TARGET_POSITION = Constants.EXTEND_TARGET_POSITION; //228
+    private double RETRACT_TARGET_POSITION = Constants.RETRACT_TARGET_POSITION;
     private double BASE_SPEED;
+
+    private final PositionVoltage mPositionVoltage = new PositionVoltage(0, 0, true, 0, 0, false, false, false);
    
     // Constructor
     public ClimberArms() {
-        CANSparkMax mLeftDrumMotor = new CANSparkMax(LEFT_CAN_ID, MotorType.kBrushless);
-        CANSparkMax mRightDrumMotor = new CANSparkMax(RIGHT_CAN_ID, MotorType.kBrushless);
+        mLeftDrumMotor = new TalonFX(11);
+        mRightDrumMotor = new TalonFX(12);
 
-        mLeftEncoder = mLeftDrumMotor.getEncoder();
-        mRightEncoder = mRightDrumMotor.getEncoder();
-
-        configureSparkMax(mLeftDrumMotor);
-        configureSparkMax(mRightDrumMotor);
+        
+        configureTalon(mLeftDrumMotor);
+        configureTalon(mRightDrumMotor);
     }
 
     // Configure Drum Motors
-    public static void configureSparkMax(CANSparkMax pDrumMotor) {
-        pDrumMotor.restoreFactoryDefaults(); 
-        pDrumMotor.setSmartCurrentLimit(20);
+    public static void configureTalon(TalonFX pDrumMotor) {
+        ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
+        clrc.DutyCycleClosedLoopRampPeriod = 0.5;
+        clrc.VoltageClosedLoopRampPeriod = 0.5;
+
+        
+
+        CurrentLimitsConfigs clc = new CurrentLimitsConfigs();
+        clc.SupplyCurrentLimit = 20;
+        clc.SupplyCurrentThreshold = 60;
+        clc.SupplyCurrentLimitEnable = true;
+
+        TalonFXConfiguration motorConfig = new TalonFXConfiguration();            
+        motorConfig.Slot0.kP = 0.1;
+        motorConfig.Slot0.kI = 0;
+        motorConfig.Slot0.kD = 0;
+        motorConfig.Slot0.kV = 0;
+        motorConfig.Slot0.kA = 0;
+ 
+
+        pDrumMotor.getConfigurator().apply(clrc);
+        pDrumMotor.getConfigurator().apply(clc);
+        pDrumMotor.getConfigurator().apply(motorConfig);
         //Various other configs
     }
 
+    private boolean isArmCloseEnough(TalonFX pArmMotor, double pTargetPosition){
+      return Math.abs(pArmMotor.getPosition().getValueAsDouble()-pTargetPosition) <= Constants.ARM_ACCEPTABLE_ERROR;
+    }
+
     // Extends arms until both reach EXTEND_TARGET_POSITION
-    public void extend() {
 
-        double leftSpeed = BASE_SPEED;
-        double rightSpeed = BASE_SPEED;
-        if (mLeftEncoder.getPosition() > EXTEND_TARGET_POSITION * 0.75)
-        {
-            leftSpeed = BASE_SPEED * 0.25;
-        }
-        if (mRightEncoder.getPosition() > EXTEND_TARGET_POSITION * 0.75)
-        {
-            leftSpeed = BASE_SPEED * 0.25;
-        }
+    double rightModifier = -1;
+    public void goToPosition(double pPosition)
+    {
+      mLeftDrumMotor.setControl(mPositionVoltage.withPosition(pPosition));
+      mRightDrumMotor.setControl(mPositionVoltage.withPosition(pPosition * rightModifier));
+    }
 
 
-        if (mLeftEncoder.getPosition() < EXTEND_TARGET_POSITION)
-        {
-          mLeftDrumMotor.set(leftSpeed);
-        }
-        else 
-        {
-          mLeftDrumMotor.set(0);
-        }
+    public void setSpeed(double pSpeed)
+    {
+      mLeftDrumMotor.set(pSpeed);
+      mRightDrumMotor.set(pSpeed * rightModifier);
+    }
 
-        if (mRightEncoder.getPosition() < EXTEND_TARGET_POSITION)
-        {
-          mRightDrumMotor.set(rightSpeed);
-        }
-        else 
-        {
-          mRightDrumMotor.set(0);
+    public double getLeftPosition()
+    {
+      return mLeftDrumMotor.getPosition().getValueAsDouble();
+    }
+
+    public double getRightPosition()
+    {
+      return mRightDrumMotor.getPosition().getValueAsDouble();
+    }
+
+
+    public boolean extend() {
+
+        goToPosition(EXTEND_TARGET_POSITION);
+
+        if(isArmCloseEnough(mLeftDrumMotor, EXTEND_TARGET_POSITION) && isArmCloseEnough(mRightDrumMotor, EXTEND_TARGET_POSITION * rightModifier)){
+          return true;
+        }else{
+          return false;
         }
     }
 
     // Retracts arms until both reach RETRACT_TARGET_POSITION
-    public void retract() {
-        double leftSpeed = BASE_SPEED;
-        double rightSpeed = BASE_SPEED;
-        if (mLeftEncoder.getPosition() < 
-            (EXTEND_TARGET_POSITION - RETRACT_TARGET_POSITION) * 0.25 + RETRACT_TARGET_POSITION)
-        {
-            leftSpeed = BASE_SPEED * 0.25;
-        }
-        if (mRightEncoder.getPosition() < 
-            (EXTEND_TARGET_POSITION - RETRACT_TARGET_POSITION) * 0.25 + RETRACT_TARGET_POSITION)
-        {
-            leftSpeed = BASE_SPEED * 0.25;
-        }
+    public boolean retract() {
+        goToPosition(RETRACT_TARGET_POSITION);
 
-
-        if (mLeftEncoder.getPosition() > RETRACT_TARGET_POSITION)
-        {
-          mLeftDrumMotor.set(-leftSpeed);
-        }
-        else 
-        {
-          mLeftDrumMotor.set(0);
-        }
-
-        if (mRightEncoder.getPosition() > RETRACT_TARGET_POSITION)
-        {
-          mRightDrumMotor.set(-rightSpeed);
-        }
-        else 
-        {
-          mRightDrumMotor.set(0);
+        if(isArmCloseEnough(mLeftDrumMotor, RETRACT_TARGET_POSITION) && isArmCloseEnough(mRightDrumMotor, RETRACT_TARGET_POSITION * rightModifier)){
+          return true;
+        }else{
+          return false;
         }
     }
 }

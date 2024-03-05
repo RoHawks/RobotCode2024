@@ -6,9 +6,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 import robosystems.Shooter;
+import robosystems.Lights.LightingScheme;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
-
+import robosystems.Lights;
 import universalSwerve.SwerveDrive;
 
 
@@ -19,6 +20,7 @@ public class HoldingState extends AState {
     private Shooter mShooter;
     private ExtendoArm mExtendoArm;
     private Controls mControls;
+    private Lights mLights;
 
     private HoldingMode mHoldingMode; // ARGH everything else is ShooterMode IntakeMode this naming convention DOESNT WORK for HoldingMode 
     private ShooterMode mShooterMode;
@@ -35,7 +37,8 @@ public class HoldingState extends AState {
         Intake pIntake,
         Shooter pShooter,
         ExtendoArm pExtendoArm,
-        Controls pControls
+        Controls pControls,
+        Lights pLights
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -45,6 +48,7 @@ public class HoldingState extends AState {
             mExtendoArm = pExtendoArm;
             mHoldingMode = HoldingMode.Holding;
             mShooterMode = ShooterMode.HighGoalDriveBy;
+            mLights = pLights;
         }
         
     protected void determineCurrentState()
@@ -85,26 +89,31 @@ public class HoldingState extends AState {
 
     @Override
     public NextStateInfo Run() {
-        // ATS commented out for tests!
+        
         logHoldingStateValues();
+        mLights.Run();
         if (mShooterMode == ShooterMode.LowGoal)
         {
             mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
             
         }
         else if (mShooterMode == ShooterMode.HighGoalManual)
         {
             mSwerveDrive.Run(mControls);
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
 
         }
         else if (mShooterMode == ShooterMode.AutoAim)
         {
             mSwerveDrive.Run(mControls); // later whatever stuff I need to do
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
 
         } 
         else if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
             mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
+            
 
         }
 
@@ -141,7 +150,7 @@ public class HoldingState extends AState {
         }
         else if (mHoldingMode == HoldingMode.Ejecting)
         {
-            mIntake.setToEjectingSpeed();
+            mIntake.setToFirstEjectingSpeed();
             return new NextStateInfo(States.Intaking, mShooterMode);
         } 
 
@@ -159,6 +168,12 @@ public class HoldingState extends AState {
         {
             return new NextStateInfo(States.Shooting, ShooterMode.HighGoalDriveBy);
         }
+
+        if (mControls.GetPrepareToClimb())
+        {
+            return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
+        }
+
 
         if (mControls.GetStartShootingSequence())
         {

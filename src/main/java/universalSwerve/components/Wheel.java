@@ -198,8 +198,16 @@ public class Wheel
      */
     public SwerveModulePosition GetPosition() 
     {
+        if(mLabel == WheelLabel.NE)
+        {
+            SmartDashboard.putNumber("mTranslationSystem.GetDistanceTravelled()", mTranslationSystem.GetDistanceTravelled());
+            SmartDashboard.putNumber("mRotationSystem.GetCurrentAngle()", mRotationSystem.GetCurrentAngle());
+            
+        }
         return new SwerveModulePosition(
-        Conversions.InchesToMeters(mTranslationSystem.GetDistanceTravelled()), 
+        //ATS not sure if I need a negative here.
+        //Find out experimentalls
+        -1.0 * Conversions.InchesToMeters(mTranslationSystem.GetDistanceTravelled()), 
         new Rotation2d(
             Math.toRadians(
                 AngleUtilities.ConvertOurAnglesToSwerveKinematicsAngles( mRotationSystem.GetCurrentAngle() )

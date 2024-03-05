@@ -32,6 +32,9 @@ public interface Controls extends ISwerveControls
     public boolean GetManualAimCounterClockwise();
     public boolean GetManualAimClockwise();
 
+    public boolean GetPrepareToClimb();
+    public boolean GetRetractClimb();
+
     public boolean GetReleaseGamePiece();
 
     public void TurnOnVibrate();
