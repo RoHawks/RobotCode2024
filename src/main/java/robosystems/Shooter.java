@@ -240,6 +240,12 @@ public class Shooter{
         spinUpToHighGoalSpeed();
     }
 
+    public void setToFirstEjectingSpeed()
+    {
+        setSpeed(-Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED, -Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
+    }
+
+
     public void spinUpToHighGoalSpeed()
     {
         setSpeed(Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED, Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);

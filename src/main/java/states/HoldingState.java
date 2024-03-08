@@ -4,7 +4,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-
+import frc.robot.Functionality;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
 import robosystems.ExtendoArm;
@@ -28,8 +28,7 @@ public class HoldingState extends AState {
     public enum HoldingMode
     {
         BackingUp,
-        Holding,
-        Ejecting
+        Holding
     }
     
     public HoldingState(
@@ -53,31 +52,26 @@ public class HoldingState extends AState {
         
     protected void determineCurrentState()
     {
-        if (mControls.GetForceEjectionMode())
+    
+        if (mIntake.getBreakBeamStatus())
         {
-            mHoldingMode = HoldingMode.Ejecting;
+            mHoldingMode = HoldingMode.BackingUp;
+            return;
         }
-        else
+        else 
         {
-            if (mIntake.getBreakBeamStatus())
+            boolean hasFinishedBackingUp = mIntake.hasConveyorFinishedBackingUp();
+            if (hasFinishedBackingUp) 
+            {
+                mHoldingMode = HoldingMode.Holding;
+            }
+            else
             {
                 mHoldingMode = HoldingMode.BackingUp;
-                return;
             }
-            if (mHoldingMode != HoldingMode.Holding)
-            {
-                boolean hasFinishedBackingUp = mIntake.hasConveyorFinishedBackingUp();
-                if (hasFinishedBackingUp) 
-                {
-                    mHoldingMode = HoldingMode.Holding;
-                }
-                else
-                {
-                    mHoldingMode = HoldingMode.BackingUp;
-                }
-            }
-            
         }
+        
+        
     }
 
     public void logHoldingStateValues()
@@ -87,11 +81,28 @@ public class HoldingState extends AState {
 
     }
 
+
+    private void basicContinousActions()
+    {
+        // logHoldingStateValues();
+        mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
+        mExtendoArm.retract();
+        mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
+        // mShooter.logShooterInformation();
+        mShooter.setAngleBasedOnShooterMode(mShooterMode);
+        
+        mLights.Run();
+        determineCurrentState();
+
+        if (mIntake.getBreakBeamStatus())
+        {
+            mIntake.recordPositionAtBreakBeam();
+        }
+    }
+
     @Override
     public NextStateInfo Run() {
         
-        logHoldingStateValues();
-        mLights.Run();
         if (mShooterMode == ShooterMode.LowGoal)
         {
             mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
@@ -113,25 +124,11 @@ public class HoldingState extends AState {
         else if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
             mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
-            
-
         }
-
-        logHoldingStateValues();
-        mExtendoArm.retract();
-        mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
-        mShooter.logShooterInformation();
-
-
-        mShooter.setAngleBasedOnShooterMode(mShooterMode);
         
-        determineCurrentState();
+        basicContinousActions();
 
-        if (mIntake.getBreakBeamStatus())
-        {
-            mIntake.recordPositionAtBreakBeam();
-        }
-
+        
         if (mHoldingMode == HoldingMode.BackingUp)
         {
             mIntake.setConveyorToBackupSpeed();
@@ -148,26 +145,27 @@ public class HoldingState extends AState {
                 mShooter.spinUpToHighGoalSpeed();
             }
         }
-        else if (mHoldingMode == HoldingMode.Ejecting)
+
+
+        if (mControls.GetForceEjectionMode())
         {
-            mIntake.setToFirstEjectingSpeed();
-            return new NextStateInfo(States.Intaking, mShooterMode);
-        } 
-
+            return new NextStateInfo(States.Ejecting, mShooterMode);
+        }
         
-        checkForShootingPreperationButtons();
-        mShooter.setAngleBasedOnShooterMode(mShooterMode);
-
 
         if(mControls.GetForceIntakingMode())
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
+
+
+
         if (mShooterMode == ShooterMode.HighGoalDriveBy && mHoldingMode == HoldingMode.Holding)
         {
             return new NextStateInfo(States.Shooting, ShooterMode.HighGoalDriveBy);
         }
+
 
         if (mControls.GetPrepareToClimb())
         {
@@ -184,27 +182,6 @@ public class HoldingState extends AState {
             return new NextStateInfo(States.Holding, mShooterMode);
         }
     }
-
-    public void checkForShootingPreperationButtons()
-    {
-        if(mControls.GetPrepareForHighGoalManual())
-        {
-            mShooterMode = ShooterMode.HighGoalManual;
-        }
-        else if(mControls.GetPrepareForHighGoalDriveBy())
-        {
-            mShooterMode = ShooterMode.HighGoalDriveBy;
-        }
-        else if(mControls.GetPrepareForLowGoal())
-        {
-            mShooterMode = ShooterMode.LowGoal;
-        }
-        else if(mControls.GetPrepareForAutoAim())
-        {
-            mShooterMode = ShooterMode.AutoAim;
-        }
-    }
-
 
     protected void EnterState(Object pEntryParameter)
     {

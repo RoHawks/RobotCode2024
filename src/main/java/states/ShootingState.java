@@ -12,7 +12,6 @@ import frc.robot.Functionality;
 import frc.robot.LimelightManager;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
-import states.IntakingState.IntakeMode;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
@@ -82,136 +81,77 @@ public class ShootingState extends AState {
         return Math.min(
             Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN_WHEN_STOPPED + ((Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN - Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN_WHEN_STOPPED) * percentageOfMaxSpeed)
             , Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN );            
-        
-        
 
     }
 
+
+    private void basicContinousActions(ChassisSpeeds pChassisSpeeds)
+    {
+        // logShootingStateInformation();
+        
+        mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
+        
+        mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
+        // mShooter.logShooterInformation();
+        mShooter.setAngleBasedOnShooterMode(mShooterMode, pChassisSpeeds);
+        setExtendoArmPosition();
+        setShooterToShooterModesAppropriateSpeed();
+        runSwerveDriveToShooterModesAppropriateBehavior();
+        mLights.Run();
+  
+
+
+    }
+
+    double mAdjustedCenter = -1;
+    boolean mCameraInLeftRightRange = false;
+    boolean mHighGoalDriveByConditonsMet = true;
+    boolean mSpecialTestVariableToEnableShooting = true;
     @Override
     public NextStateInfo Run() {
         
         ChassisSpeeds chassisSpeeds = mSwerveDrive.getLastRequestedChassisSpeeds();
+        ShooterMode initialShooterMode = mShooterMode;
+        basicContinousActions(chassisSpeeds);
+        if (initialShooterMode != ShooterMode.HighGoalManual && mShooterMode == ShooterMode.HighGoalDriveBy) // hacky way to make the note not shoot if you swap to manual midmode
+        {
+            return new NextStateInfo(States.Holding, mShooterMode);
+        }
+        else if (initialShooterMode != ShooterMode.LowGoal && mShooterMode == ShooterMode.LowGoal) // hacky way to make the note not shoot if you swap to manual midmode
+        {
+            return new NextStateInfo(States.Holding, mShooterMode);
+        }
 
-        logShootingStateInformation();
-        checkForShootingPreperationButtons();
-        mShooter.setAngleBasedOnShooterMode(mShooterMode, chassisSpeeds);
-        mLights.Run();
+
+        if (mShooterMode == ShooterMode.LowGoal || mShooterMode == ShooterMode.HighGoalManual)
+        {
+            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
+        }
+      
         
-
-        if (mShooterMode == ShooterMode.LowGoal)
-        {
-            mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
-            mExtendoArm.lowGoalExtension();
-            mShooter.spinUpToLowGoalSpeed();
-            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
-        }
-        else if (mShooterMode == ShooterMode.HighGoalManual)
-        {
-            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
-            mExtendoArm.retract();
-            mShooter.spinUpToHighGoalSpeed();
-            mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
-        }
-        else if (mShooterMode == ShooterMode.AutoAim)
-        {
-            mSwerveDrive.Run(mControls); // later whatever stuff I need to do
-            mExtendoArm.retract();
-            mShooter.spinUpToHighGoalSpeed();
-        } 
-        else if (mShooterMode == ShooterMode.HighGoalDriveBy)
-        {
-            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
-            mExtendoArm.retract();
-            mShooter.spinUpToHighGoalSpeed();
-        }
-
-        boolean highGoalDriveByExtensionConditonsMet = true;
-        boolean cameraInLeftRightRange = false;
-        double value = -1;
-        double adjustedCenter = -1;
+        mHighGoalDriveByConditonsMet = false;
         if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
             double[] cameraPositionInTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
-            if (cameraPositionInTargetSpace != null)
-            {
-                if(!mHasShot)
-                {
-                    mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
-                }
-                value = cameraPositionInTargetSpace[0];
-                SmartDashboard.putNumber("Lime: X Displacement", value);
-
-                
-                
-                if (chassisSpeeds == null)
-                {
-                    adjustedCenter = CENTER_POINT;
-                }
-                else
-                {
-                    adjustedCenter = getAdjustedCenterFromChassisSpeed(chassisSpeeds);
-                }
-
-                SmartDashboard.putNumber("Adjusted Center Point", adjustedCenter);
-
-                double leftRightErrorToleranceFromChassisSpeeds = getLeftRightErrorToleranceFromChassisSpeeds(chassisSpeeds);
-
-                cameraInLeftRightRange = Math.abs(cameraPositionInTargetSpace[0] - adjustedCenter) < leftRightErrorToleranceFromChassisSpeeds; //Old version: Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN;                 
-                boolean isAnglerInCorrectRange = mShooter.getIfAutomaticAnglerInRange(chassisSpeeds);
-                highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange &&  isAnglerInCorrectRange;
-                // highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange; //for now ignore height of shooter && mShooter.getIfAutomaticAnglerInRange();
-                
-            }
-            else
-            {
-                if(!mHasShot)
-                {
-                    mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
-                }
-                cameraInLeftRightRange = false;
-                highGoalDriveByExtensionConditonsMet = false;
-            }
+            mHighGoalDriveByConditonsMet = isHighGoalDriveByConditionsMet(chassisSpeeds, cameraPositionInTargetSpace);
+            setLightsInDriveByMode(cameraPositionInTargetSpace);
         }
         
         boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
-       
         boolean persistentlyHasCorrectSpeed = mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
+        mSpecialTestVariableToEnableShooting = true;
 
-        boolean specialTestVariableToEnableShooting = true;
-
-        SmartDashboard.putBoolean("persistentlyHasCorrectSpeed", persistentlyHasCorrectSpeed);
-        SmartDashboard.putBoolean("lowGoalExtensionConditionsMet", lowGoalExtensionConditionsMet);
-        SmartDashboard.putBoolean("highGoalDriveByExtensionConditonsMet", highGoalDriveByExtensionConditonsMet);
-        SmartDashboard.putBoolean("mHasShot", mHasShot);
-        SmartDashboard.putBoolean("specialTestVariableToEnableShooting", specialTestVariableToEnableShooting);
-        SmartDashboard.putBoolean("cameraInLeftRightRange", cameraInLeftRightRange);
+        boolean generalConditionsMet = persistentlyHasCorrectSpeed && lowGoalExtensionConditionsMet && mHighGoalDriveByConditonsMet;
+        boolean readyToShoot = (generalConditionsMet || mHasShot) && mSpecialTestVariableToEnableShooting;
 
 
        
-        if (
-            ((persistentlyHasCorrectSpeed
-            && lowGoalExtensionConditionsMet
-            && highGoalDriveByExtensionConditonsMet)
-            || mHasShot) 
-            && specialTestVariableToEnableShooting
-            )
+        if (readyToShoot)
         {
             if (!mHasShot)
             {
-                SmartDashboard.putNumber("DriveByTest: Distance when shot", value);
-                SmartDashboard.putNumber("DriveByTest: Adjusted Center when shot", adjustedCenter);
-                SmartDashboard.putNumber("DriveByTest: Distance From Adjusted Center When Shot", Math.abs(value - adjustedCenter));
                 mHasShot = true;
                 mTimeStartedToShoot = System.currentTimeMillis();
-                
-                if (mShooterMode == ShooterMode.HighGoalManual)
-                {
-                   
-                }
-                else if (mShooterMode == ShooterMode.LowGoal)
-                {
-                    mSwerveDrive.TurnAllWheels(270);
-                }
             } 
             mLights.SetLightingScheme(LightingScheme.Shooting);
             mIntake.setToLaunchingNoteIntoTheShooterSpeed();
@@ -221,16 +161,16 @@ public class ShootingState extends AState {
             mIntake.setToHoldingSpeed();
         }
         
-        SmartDashboard.putString("ShooterMode", mShooterMode.name());
-        
-        
     
-        if(mControls.GetForceIntakingMode())
+        
+        if (mControls.GetForceEjectionMode())
+        {
+            return new NextStateInfo(States.Ejecting, mShooterMode);
+        }
+        else if (mControls.GetForceIntakingMode())
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
-
-        SmartDashboard.putNumber("Shooting: Time Elapsed Since Shooting", System.currentTimeMillis() - mTimeStartedToShoot);
 
         if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > 500)
         {
@@ -243,23 +183,123 @@ public class ShootingState extends AState {
         
     }
 
-    private void checkForShootingPreperationButtons()
+    double mPlaceHolderForLimeLightX;
+    private void logDriveByShootingInformationGeneral()
     {
-        if(mControls.GetPrepareForHighGoalManual())
+        mPlaceHolderForLimeLightX = -1;
+        double[] cameraPositionInTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
+        if (cameraPositionInTargetSpace != null)
         {
-            mShooterMode = ShooterMode.HighGoalManual;
+            mPlaceHolderForLimeLightX = cameraPositionInTargetSpace[0];
+            SmartDashboard.putNumber("Lime: X Displacement", mPlaceHolderForLimeLightX);
         }
-        else if(mControls.GetPrepareForHighGoalDriveBy())
+
+        boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
+        SmartDashboard.putBoolean("persistentlyHasCorrectSpeed", mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode));
+        SmartDashboard.putBoolean("mHasShot", mHasShot);
+        SmartDashboard.putBoolean("lowGoalExtensionConditionsMet", lowGoalExtensionConditionsMet);
+        SmartDashboard.putBoolean("highGoalDriveByExtensionConditonsMet", mHighGoalDriveByConditonsMet);
+        SmartDashboard.putBoolean("cameraInLeftRightRange", mCameraInLeftRightRange);
+        SmartDashboard.putBoolean("specialTestVariableToEnableShooting", mSpecialTestVariableToEnableShooting);
+        SmartDashboard.putNumber("Shooting: Time Elapsed Since Shooting", System.currentTimeMillis() - mTimeStartedToShoot);
+        SmartDashboard.putString("ShooterMode", mShooterMode.name());
+        
+    }
+
+    private void logDriveByShootingInformationWhenShot()
+    {
+        SmartDashboard.putNumber("DriveByTest: Distance when shot", mPlaceHolderForLimeLightX);
+        SmartDashboard.putNumber("DriveByTest: Adjusted Center when shot", mAdjustedCenter);
+        SmartDashboard.putNumber("DriveByTest: Distance From Adjusted Center When Shot", Math.abs(mPlaceHolderForLimeLightX - mAdjustedCenter));
+        SmartDashboard.putNumber("DriveByTest: Adjusted Center Point when shot", mAdjustedCenter);
+        
+    }
+
+    private boolean isHighGoalDriveByConditionsMet(ChassisSpeeds pChassisSpeeds, double[] pCameraPositionInTargetSpace)
+    {
+        mAdjustedCenter = -1;
+        mCameraInLeftRightRange = false;
+        if (pCameraPositionInTargetSpace != null)
         {
-            mShooterMode = ShooterMode.HighGoalDriveBy;
+
+            if (pChassisSpeeds == null)
+            {
+                mAdjustedCenter = CENTER_POINT;
+            }
+            else
+            {
+                mAdjustedCenter = getAdjustedCenterFromChassisSpeed(pChassisSpeeds);
+            }
+            
+            double leftRightErrorToleranceFromChassisSpeeds = getLeftRightErrorToleranceFromChassisSpeeds(pChassisSpeeds);
+
+            mCameraInLeftRightRange = Math.abs(pCameraPositionInTargetSpace[0] - mAdjustedCenter) < leftRightErrorToleranceFromChassisSpeeds; //Old version: Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN;                 
+            boolean isAnglerInCorrectRange = mShooter.getIfAutomaticAnglerInRange(pChassisSpeeds);
+            mHighGoalDriveByConditonsMet = mCameraInLeftRightRange &&  isAnglerInCorrectRange;
+            // highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange; //for now ignore height of shooter && mShooter.getIfAutomaticAnglerInRange();
+            
         }
-        else if(mControls.GetPrepareForLowGoal())
+        else
         {
-            mShooterMode = ShooterMode.LowGoal;
+            mCameraInLeftRightRange = false;
+            mHighGoalDriveByConditonsMet = false;
         }
-        else if(mControls.GetPrepareForAutoAim())
+        return mHighGoalDriveByConditonsMet;
+    }
+
+    private void setExtendoArmPosition()
+    {
+        if (mShooterMode == ShooterMode.LowGoal)
         {
-            mShooterMode = ShooterMode.AutoAim;
+            mExtendoArm.lowGoalExtension();
+        }
+        else
+        {
+           mExtendoArm.retract(); 
+        }
+    }
+
+    private void setShooterToShooterModesAppropriateSpeed()
+    {
+        if (mShooterMode == ShooterMode.LowGoal)
+        {
+            mShooter.spinUpToLowGoalSpeed();
+        }
+        else
+        {
+           mShooter.spinUpToHighGoalSpeed();
+        }
+    }
+
+    private void runSwerveDriveToShooterModesAppropriateBehavior()
+    {
+        if (mShooterMode == ShooterMode.LowGoal)
+        {
+            mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
+        }
+        else if (mShooterMode == ShooterMode.HighGoalManual || mShooterMode == ShooterMode.HighGoalDriveBy)
+        {
+            mSwerveDrive.Run(mControls, true, Constants.HIGH_GOAL_ROTATION);
+        }
+        else // if (mShooterMode == ShooterMode.AutoAim) is the only other possible case
+        {
+            mSwerveDrive.Run(mControls); 
+        }
+
+    }
+
+    private void setLightsInDriveByMode(double[] pCameraPositionInTargetSpace)
+    {
+        if (!mHasShot)
+        {
+            if (pCameraPositionInTargetSpace != null)
+            {
+                mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
+            }
+            else
+            {
+                mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
+            }
         }
     }
 
@@ -269,7 +309,6 @@ public class ShootingState extends AState {
         SmartDashboard.putBoolean("Persistently at Speed", mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode));
         mShooter.logShooterInformation();
     }
-
   
 
     protected void EnterState(Object pEntryParameter)

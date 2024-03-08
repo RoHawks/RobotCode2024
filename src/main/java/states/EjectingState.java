@@ -3,12 +3,13 @@ package states;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkFlex;
 
+import frc.robot.Functionality;
 import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
+import robosystems.Lights.LightingScheme;
 import robosystems.Shooter;
-import states.IntakingState.IntakeMode;
 import universalSwerve.SwerveDrive;
 
 public class EjectingState extends AState
@@ -51,17 +52,30 @@ public class EjectingState extends AState
 
     }
 
+    private void basicContinousActions()
+    {
+        mSwerveDrive.Run(mControls);
+        mExtendoArm.retract();
+        mShooter.setAngleToIntakingAngle();
+        mLights.SetLightingScheme(LightingScheme.Ejecting);
+        mLights.Run();
+        mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);
+    }
+
     public NextStateInfo Run(){
 
-        mSwerveDrive.Run(mControls);
-        
-        mExtendoArm.retract();
+        basicContinousActions();
 
-
-        if (GetTimeSinceEntry() < 2000)
+        double timeToCoolDown = 250;
+        if (GetTimeSinceEntry() < 2000 - timeToCoolDown)
         {
             mIntake.setToFirstEjectingSpeed();
-            mShooter.backingUpNoteToPreventFallingOut();
+            mShooter.setToFirstEjectingSpeed();
+        }
+        else if (GetTimeSinceEntry() < 2000 + timeToCoolDown)
+        {
+            mIntake.setToFirstEjectingSpeed();
+            mShooter.setSpeed(0,0);
         }
         else if (GetTimeSinceEntry() < 4000)
         {
@@ -74,8 +88,6 @@ public class EjectingState extends AState
         }
 
 
-
-
         if (mControls.GetForceIntakingMode())
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
@@ -85,11 +97,11 @@ public class EjectingState extends AState
     }
 
     public States GetState(){
-        return States.TrapShooting;
+        return States.Ejecting;
     }
 
     public String GetName(){
-        return "TrapShooting";
+        return "Ejecting";
     }
 
 

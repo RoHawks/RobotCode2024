@@ -4,7 +4,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-
+import frc.robot.Functionality;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
 import robosystems.ExtendoArm;
@@ -22,14 +22,9 @@ public class IntakingState extends AState {
     private Controls mControls;
     private Lights mLights;
 
-    private IntakeMode mIntakeMode;
+
     private ShooterMode mShooterMode;
 
-    public enum IntakeMode
-    {
-        NormalIntaking,
-        Ejecting
-    }
 
     public IntakingState(
         SwerveDrive pSwerveDrive,
@@ -45,7 +40,6 @@ public class IntakingState extends AState {
             mShooter = pShooter;
             mExtendoArm = pExtendoArm;
             mControls = pControls;   
-            mIntakeMode = IntakeMode.NormalIntaking;
             mShooterMode = ShooterMode.HighGoalDriveBy;
             mLights = pLights;
         }
@@ -53,10 +47,21 @@ public class IntakingState extends AState {
     
     public void logIntakingStateValues()
     {
-        SmartDashboard.putString("Intaking State: IntakingMode", mIntakeMode.toString());
         SmartDashboard.putString("Intaking State: ShooterMode", mShooterMode.toString());
     }
     
+
+    private void basicContinousActions()
+    {
+        mSwerveDrive.Run(mControls);
+        mShooter.setAngleToIntakingAngle();
+        mShooter.setSpeed(0,0);
+        mExtendoArm.retract();
+        mLights.SetLightingScheme(LightingScheme.Intaking);
+        mLights.Run();
+        mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);
+    }
+
     /**
      * Runs the intake. <br><br>
      * Ejection will only work while the button is held, and will go back to normal intaking if released
@@ -64,28 +69,17 @@ public class IntakingState extends AState {
     @Override
     public NextStateInfo Run() {
         // ATS commented out for tests!
-        mSwerveDrive.Run(mControls);
-        logIntakingStateValues();
-        mShooter.setAngleToIntakingAngle();
-        mShooter.setSpeed(0,0);
-        mExtendoArm.retract();
-        mLights.SetLightingScheme(LightingScheme.Intaking);
-        mLights.Run();
 
-        if (mIntakeMode == IntakeMode.NormalIntaking)
+        basicContinousActions();
+
+        
+        if (GetTimeSinceEntry() < 400)
         {
-            if (GetTimeSinceEntry() < 400)
-            {
-                mIntake.setToHoldingSpeed();
-            }
-            else
-            {
-                mIntake.setToNormalIntakingSpeed();
-            } 
+            mIntake.setToHoldingSpeed();
         }
-        else if (mIntakeMode == IntakeMode.Ejecting)
+        else
         {
-            mIntake.setToFirstEjectingSpeed();
+            mIntake.setToNormalIntakingSpeed();
         } 
         
         
@@ -103,28 +97,13 @@ public class IntakingState extends AState {
 
         if (mControls.GetForceEjectionMode())
         {
-            setIntakingMode(IntakeMode.Ejecting);
+            return new NextStateInfo(States.Ejecting, mShooterMode);
         }
-        else
-        {
-            setIntakingMode(IntakeMode.NormalIntaking);
-        }
-
-        if(mControls.GetForceIntakingMode())
-        {
-            setIntakingMode(IntakeMode.NormalIntaking);
-        }
-                
-        checkForShootingPreperationButtons();
-        
-
-        if (mControls.GetPrepareToClimb())
+        else if (mControls.GetPrepareToClimb())
         {
             return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
         }
-
-
-        if (mIntake.getBreakBeamStatus())
+        else if (mIntake.getBreakBeamStatus())
         {
             mIntake.recordPositionAtBreakBeam();
             return new NextStateInfo(States.Holding, mShooterMode);
@@ -135,50 +114,13 @@ public class IntakingState extends AState {
         }
     }
 
-    public void checkForShootingPreperationButtons()
-    {
-        if(mControls.GetPrepareForHighGoalManual())
-        {
-            mShooterMode = ShooterMode.HighGoalManual;
-        }
-        else if(mControls.GetPrepareForHighGoalDriveBy())
-        {
-            mShooterMode = ShooterMode.HighGoalDriveBy;
-        }
-        else if(mControls.GetPrepareForLowGoal())
-        {
-            mShooterMode = ShooterMode.LowGoal;
-        }
-        else if(mControls.GetPrepareForAutoAim())
-        {
-            mShooterMode = ShooterMode.AutoAim;
-        }
-    }
-
-    public void checkForForceEjectionMode(){
-        if(mControls.GetForceEjectionMode()){
-            mIntakeMode = IntakeMode.Ejecting;
-        }
-    }
-
-    public void checkForForceIntakingMode(){
-        if(mControls.GetForceIntakingMode()){
-            mIntakeMode = IntakeMode.NormalIntaking;
-        }
-    }
-
-
-    private void setIntakingMode(IntakeMode pIntakeMode)
-    {
-        mIntakeMode = pIntakeMode;
-    }
 
 
     protected void EnterState(Object pEntryParameter)
     {
         super.EnterState(pEntryParameter);
         //For normal usage
-        setIntakingMode(IntakeMode.NormalIntaking);
+
         mLights.SetLightingScheme(LightingScheme.Intaking);
         if (pEntryParameter instanceof ShooterMode)
         {

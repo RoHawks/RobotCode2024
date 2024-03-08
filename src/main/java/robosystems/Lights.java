@@ -40,7 +40,8 @@ public class Lights
         Intaking,
         HoldingButNoCameraLock,
         HoldingWithCameraLock,
-        Shooting
+        Shooting,
+        Ejecting
     }
 
     public void SetLightingScheme(LightingScheme pLightingScheme)
@@ -71,6 +72,13 @@ public class Lights
                 mCurrentRed = 255;
                 mCurrentGreen = 0;
                 mCurrentBlue = 255;
+                break;
+            case Ejecting:
+                mCurrentRed = 255;
+                mCurrentGreen = 0;
+                mCurrentBlue = 0;
+                break;
+            default:
                 break;
 
         }
