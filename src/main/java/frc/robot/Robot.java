@@ -44,6 +44,7 @@ import universalSwerve.components.WheelLabel;
 
 import java.lang.Thread.State;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix6.Orchestra;
@@ -533,35 +534,53 @@ public class Robot extends TimedRobot
 
   private double lastRecordedX = 0; 
 
-  public void logLimeLightInfo()
+  private void logLimelightInfo(String pCameraName, double[] camerapose_targetspace)
   {
-    double[] camerapose_targetspace = mLimelightManager.getCameraPoseTargetSpace();
-    if (camerapose_targetspace != null)
-    {
-      SmartDashboard.putNumber("Lime: X change since last TS", camerapose_targetspace[0] - lastRecordedX);
-      lastRecordedX = camerapose_targetspace[0];
-      SmartDashboard.putNumber("X displacement", camerapose_targetspace[0]);
-      SmartDashboard.putNumber("Y displacement", camerapose_targetspace[1]);
-      SmartDashboard.putNumber("Z displacement", camerapose_targetspace[2]);
 
-      SmartDashboard.putNumber("Roll displacement", camerapose_targetspace[3]);
-      SmartDashboard.putNumber("Pitch displacement", camerapose_targetspace[4]);
-      SmartDashboard.putNumber("Yaw displacement", camerapose_targetspace[5]);
-      SmartDashboard.putNumber("Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
-      SmartDashboard.putBoolean("Can See Tag", true);
+    
+   if (camerapose_targetspace != null)
+    {
+      SmartDashboard.putNumber(pCameraName + "Lime: X change since last TS", camerapose_targetspace[0] - lastRecordedX);
+      lastRecordedX = camerapose_targetspace[0];
+      SmartDashboard.putNumber(pCameraName + "X displacement", camerapose_targetspace[0]);
+      SmartDashboard.putNumber(pCameraName + "Y displacement", camerapose_targetspace[1]);
+      SmartDashboard.putNumber(pCameraName + "Z displacement", camerapose_targetspace[2]);
+
+      SmartDashboard.putNumber(pCameraName + "Roll displacement", camerapose_targetspace[3]);
+      SmartDashboard.putNumber(pCameraName + "Pitch displacement", camerapose_targetspace[4]);
+      SmartDashboard.putNumber(pCameraName + "Yaw displacement", camerapose_targetspace[5]);
+      SmartDashboard.putNumber(pCameraName + "Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
+      SmartDashboard.putBoolean(pCameraName + "Can See Tag", true);
     }
     else
     {
-      SmartDashboard.putNumber("X displacement", -1);
-      SmartDashboard.putNumber("Y displacement", -1);
-      SmartDashboard.putNumber("Z displacement", -1);
-      SmartDashboard.putNumber("Roll displacement", -1);
-      SmartDashboard.putNumber("Pitch displacement", -1);
-      SmartDashboard.putNumber("Yaw displacement", -1);
-      SmartDashboard.putBoolean("Can See Tag", false);
+      SmartDashboard.putNumber(pCameraName + "X displacement", -1);
+      SmartDashboard.putNumber(pCameraName + "Y displacement", -1);
+      SmartDashboard.putNumber(pCameraName + "Z displacement", -1);
+      SmartDashboard.putNumber(pCameraName + "Roll displacement", -1);
+      SmartDashboard.putNumber(pCameraName + "Pitch displacement", -1);
+      SmartDashboard.putNumber(pCameraName + "Yaw displacement", -1);
+      SmartDashboard.putBoolean(pCameraName + "Can See Tag", false);
       
     }
+  }
+
+  public void logLimeLightInfo()
+  {
+
+    try
+    {
+      SmartDashboard.putNumber("LimeLightWestMinusEast", mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.WEST_CAMERA)[0]  - mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.EAST_CAMERA)[0] );
+    }
+    catch(Exception e)
+      {
+
+      }
     
+
+    logLimelightInfo("East-", mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.EAST_CAMERA));
+    logLimelightInfo("West-", mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.WEST_CAMERA));
+    logLimelightInfo("Combined-", mLimelightManager.getCameraPoseTargetSpace());
    
   }
 
@@ -598,7 +617,7 @@ public class Robot extends TimedRobot
   private double mPosition = -800;
   public void teleopPeriodic()
   {
-    
+    logLimeLightInfo();
     // if (mMainController.getAButton())
     // {
     //   mClimberArms.setSpeed(0.2);
@@ -680,16 +699,58 @@ public class Robot extends TimedRobot
 
   }
 
+
+  private void testShooterMotors()
+  {
+    List<TalonFX> shooterMotors =  mShooter.getSpeakers();
+    shooterMotors.get(0).set(0.5);
+    shooterMotors.get(1).set(0.5);
+    mShooter.logShooterInformation();
+  }
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() 
   {
+    if (mMainController.getAButton())
+    {
+      mClimberArms.setLeftSpeed(0.2);
+    }
+    else if (mMainController.getBButton())
+    {
+      mClimberArms.setLeftSpeed(-0.2);
+    }
+    else if (mMainController.getXButton())
+    {
+      mClimberArms.setRightSpeed(0.2);
+    }
+    else if (mMainController.getYButton())
+    {
+      mClimberArms.setRightSpeed(-0.2);
+    }
+    else
+    {
+      mClimberArms.setSpeed(0);
+    }
+
+    if (mMainController.getRightBumper())
+    {
+      mShooter.setAnglerSpeed(-0.2);
+    }
+    else
+    {
+      mShooter.setAnglerSpeed(0);
+    }
+    // testShooterMotors();
+    return;
+  }
     // if (!mAnglerMotorAndGyroZeroingHasOccurred)
     // {
     //   zeroAnglerEncoderAndGyro();
     //   return;
     // }
     // mSwerveDrive.Run(mJoystickSwerveControls);
+   public void fake()
+   {
     mIntake.setToNormalIntakingSpeed();
     // testChoreo1();
     if (mMainController.getAButton())

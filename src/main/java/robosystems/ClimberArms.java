@@ -87,6 +87,18 @@ public class ClimberArms {
       mRightDrumMotor.set(pSpeed * rightModifier);
     }
 
+
+    public void setLeftSpeed(double pSpeed)
+    {
+      mLeftDrumMotor.set(pSpeed);
+      // mRightDrumMotor.set(pSpeed * rightModifier);
+    }
+    public void setRightSpeed(double pSpeed)
+    {
+      // mLeftDrumMotor.set(pSpeed);
+      mRightDrumMotor.set(pSpeed * rightModifier);
+    }
+
     public double getLeftPosition()
     {
       return mLeftDrumMotor.getPosition().getValueAsDouble();

@@ -27,14 +27,28 @@ public class LimelightInformation {
         {
             NetworkTable table = NetworkTableInstance.getDefault().getTable(mHostname);
            
-            //NetworkTableEntry jsonNTE = table.getEntry("json");
+            NetworkTableEntry jsonNTE = table.getEntry("json");
            
-            //String json_dump = jsonNTE.getString("null");
+            String json_dump = jsonNTE.getString("null");
            
             
-            //double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
-            double[] camerapose_targetspace = table.getValue("camerapose_targetspace").getDoubleArray();
+            double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
+            // double[] camerapose_targetspace = table.getValue("camerapose_targetspace").getDoubleArray();
             SmartDashboard.putNumber("hereD", System.currentTimeMillis());
+            
+
+            boolean isNull = true;
+            for (double d : camerapose_targetspace)
+            {
+                if (Math.abs(d) > 1e-5)
+                {
+                    isNull = false;
+                }
+            }
+            if (isNull)
+            {
+                camerapose_targetspace = null;
+            }
 
             if (camerapose_targetspace != null)
             {

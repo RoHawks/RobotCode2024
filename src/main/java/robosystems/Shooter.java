@@ -98,9 +98,11 @@ public class Shooter{
         MotorOutputConfigs motorOutputConfig = new MotorOutputConfigs();
         motorOutputConfig.NeutralMode = NeutralModeValue.Coast;
         
+        
         ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
         clrc.DutyCycleClosedLoopRampPeriod = 0.5;
         clrc.VoltageClosedLoopRampPeriod = 0.5;
+        
 
         returnValue.getConfigurator().apply(motorOutputConfig);
 
@@ -122,8 +124,8 @@ public class Shooter{
         returnValue.setInverted(pIsInverted);
         returnValue.setSoftLimit(SoftLimitDirection.kForward, 190);
         returnValue.setSoftLimit(SoftLimitDirection.kReverse, 10);
-        returnValue.enableSoftLimit(SoftLimitDirection.kForward, false);
-        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, false);
+        returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
+        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
 
         returnValue.getPIDController().setP(0.12);
         returnValue.getPIDController().setI(0.00);
@@ -153,21 +155,22 @@ public class Shooter{
         mAnglerMotor =  CreateAnglerMotor(14, true); 
         
         TalonFXConfiguration topShooterConfig = new TalonFXConfiguration();            
-        topShooterConfig.Slot0.kS = -0.22694;
-        topShooterConfig.Slot0.kP = 0.23394;
+        topShooterConfig.Slot0.kS = 0.183;
+        topShooterConfig.Slot0.kP = 0.0047239;
         topShooterConfig.Slot0.kI = 0;
         topShooterConfig.Slot0.kD = 0.02;
-        topShooterConfig.Slot0.kV = 0.15755;
+        topShooterConfig.Slot0.kV = 0.11624;
+        
         topShooterConfig.Slot0.kA = 0;
 
         mTopShooterRoller = CreateShooterMotor(4, true, topShooterConfig);
 
         TalonFXConfiguration bottomShooterConfig = new TalonFXConfiguration();            
-        bottomShooterConfig.Slot0.kS = -0.62356;
-        bottomShooterConfig.Slot0.kP = 0.21769;
+        bottomShooterConfig.Slot0.kS = 0.17797;
+        bottomShooterConfig.Slot0.kP = 0.025838;
         bottomShooterConfig.Slot0.kI = 0;
         bottomShooterConfig.Slot0.kD = 0.02;
-        bottomShooterConfig.Slot0.kV = 0.1701;
+        bottomShooterConfig.Slot0.kV = 0.12487;
         bottomShooterConfig.Slot0.kA = 0;
 
         mBottomShooterRoller = CreateShooterMotor(5, false, bottomShooterConfig);
@@ -338,11 +341,15 @@ public class Shooter{
     {
         SmartDashboard.putNumber("Shooter: Top Shooter Velocity", mTopShooterRoller.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Shooter: Top Output Voltage", mTopShooterRoller.getMotorVoltage().getValueAsDouble());
+        SmartDashboard.putNumber("Shooter: Top Shooter Current", mTopShooterRoller.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Shooter: Bottom Shooter Velocity", mBottomShooterRoller.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Shooter: Bottom Output Voltage", mBottomShooterRoller.getMotorVoltage().getValueAsDouble());
+        SmartDashboard.putNumber("Shooter: Bottom Shooter Current", mBottomShooterRoller.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Shooter: Constant Top Shooter Speed", Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED);
         SmartDashboard.putNumber("Shooter: Constant Bottom Shooter Speed", Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
         SmartDashboard.putNumber("Shooter: Time Elapsed Since Shooter Reached Right Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
+        SmartDashboard.putNumber("Shooter: Angler Output Percentage", mAnglerMotor.getAppliedOutput());
+        SmartDashboard.putNumber("Shooter: Angler Output Current", mAnglerMotor.getOutputCurrent());
     }   
 
 
@@ -459,6 +466,7 @@ public class Shooter{
     private double mLastTargetAngle;
     public void setAngle(double pDesiredPosition) //needs to be implemented
     {
+        SmartDashboard.putNumber("EXCITING: Last Requested Angle To Shoot At", pDesiredPosition);
         mLastTargetAngle = pDesiredPosition;
         mAnglerMotor.getPIDController().setReference(pDesiredPosition, ControlType.kPosition);
 
@@ -480,7 +488,7 @@ public class Shooter{
     
     public void resetOutputRange()
     {
-        mPIDController.setOutputRange(-1, 1);
+        mPIDController.setOutputRange(-1000, 1000);
     }
 
 

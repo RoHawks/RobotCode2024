@@ -21,7 +21,7 @@ public class LimelightManager
         for(int i = 0; i < mLimeLights.length; i++)
         {
             mLimeLights[i].calculateCameraPoseTargetSpace(
-                i == WEST_CAMERA ? 0.532 : 0                //this is 22.5 incvhes plus a tiny fuidge factor from experimetnation
+                i == WEST_CAMERA ? 0: 0//-0.532 : 0                //this is 22.5 incvhes plus a tiny fuidge factor from experimetnation
             );
         }
         //Now offset the west camera to be in the same "spot" as the east camera
