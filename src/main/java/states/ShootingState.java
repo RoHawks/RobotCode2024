@@ -132,52 +132,9 @@ public class ShootingState extends AState {
         mHighGoalDriveByConditonsMet = false;
         if (mShooterMode == ShooterMode.HighGoalDriveBy)
         {
-<<<<<<< Updated upstream
             double[] cameraPositionInTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
             mHighGoalDriveByConditonsMet = isHighGoalDriveByConditionsMet(chassisSpeeds, cameraPositionInTargetSpace);
             setLightsInDriveByMode(cameraPositionInTargetSpace);
-=======
-            double[] cameraPositionInTargetSpace = mLimelightManager.getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.EAST_CAMERA);
-            if (cameraPositionInTargetSpace != null)
-            {
-                if(!mHasShot)
-                {
-                    mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
-                }
-                value = cameraPositionInTargetSpace[0];
-                SmartDashboard.putNumber("Lime: X Displacement", value);
-
-                
-                
-                if (chassisSpeeds == null)
-                {
-                    adjustedCenter = CENTER_POINT;
-                }
-                else
-                {
-                    adjustedCenter = getAdjustedCenterFromChassisSpeed(chassisSpeeds);
-                }
-
-                SmartDashboard.putNumber("Adjusted Center Point", adjustedCenter);
-
-                double leftRightErrorToleranceFromChassisSpeeds = getLeftRightErrorToleranceFromChassisSpeeds(chassisSpeeds);
-
-                cameraInLeftRightRange = Math.abs(cameraPositionInTargetSpace[0] - adjustedCenter) < leftRightErrorToleranceFromChassisSpeeds; //Old version: Constants.DRIVE_BY_SHOOTNG_DISTANCE_ERROR_MARGIN;                 
-                boolean isAnglerInCorrectRange = mShooter.getIfAutomaticAnglerInRange(chassisSpeeds);
-                highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange &&  isAnglerInCorrectRange;
-                // highGoalDriveByExtensionConditonsMet = cameraInLeftRightRange; //for now ignore height of shooter && mShooter.getIfAutomaticAnglerInRange();
-                
-            }
-            else
-            {
-                if(!mHasShot)
-                {
-                    mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
-                }
-                cameraInLeftRightRange = false;
-                highGoalDriveByExtensionConditonsMet = false;
-            }
->>>>>>> Stashed changes
         }
         
         boolean lowGoalExtensionConditionsMet = !(mShooterMode == ShooterMode.LowGoal && !mExtendoArm.hasReachedLowGoal());
