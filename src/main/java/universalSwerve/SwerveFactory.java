@@ -46,10 +46,10 @@ public class SwerveFactory
 
         //SysID Config
         
-        PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.12701, 0, 0,  0.12085, 0.11746);//p = 0.12701, a = 0.027155
-        PIDFConfiguration seDriveFPIDCongiruation = new PIDFConfiguration(0.13894, 0, 0,  0.11731, 0.22923);//p = 0.13894, a = 0.020701
-        PIDFConfiguration swDriveFPIDCongiruation = new PIDFConfiguration(0.1199, 0, 0,  0.12353, 0.17425);//p 0.1199, a 0.0265
-        PIDFConfiguration nwDriveFPIDCongiruation = new PIDFConfiguration(0.1219, 0, 0,  0.1244,  0.26311);//p 0.1219, a 0013223
+        PIDFConfiguration neDriveFPIDCongiruation = new PIDFConfiguration(0.13478, 0, 0,  0.11939, 0.11044);//p = 0.12701, a = 0.027155
+        PIDFConfiguration seDriveFPIDCongiruation = new PIDFConfiguration(0.10966, 0, 0,  0.12152, 0.2147);//p = 0.13894, a = 0.020701
+        PIDFConfiguration swDriveFPIDCongiruation = new PIDFConfiguration(0.14748, 0, 0,  0.12003, 0.20957);//p 0.1199, a 0.0265
+        PIDFConfiguration nwDriveFPIDCongiruation = new PIDFConfiguration(0.10088, 0, 0,  0.12085,  0.26914);//p 0.1219, a 0013223
 
         PIDFConfiguration[] driveFPIDConfigurations = new PIDFConfiguration[]{ neDriveFPIDCongiruation, seDriveFPIDCongiruation, swDriveFPIDCongiruation, nwDriveFPIDCongiruation};
 

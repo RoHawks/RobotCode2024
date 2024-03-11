@@ -2,6 +2,8 @@ package robotcode.autonomous;
 
 import java.util.ArrayList;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class Step 
 {
     private ArrayList<AAction> mActions;
@@ -25,17 +27,33 @@ public class Step
 
     public boolean Run()
     {
+        StringBuilder log = new StringBuilder();
+        log.append(mName);
+        log.append("(");
+        log.append(mActions.size());
+        log.append(")");
+        log.append(" :");
+
         boolean allActionsComplete = true;
         for(int i = 0; i < mActions.size(); i++)
         {
             AAction action = mActions.get(i);
             boolean actionIsComplete = action.Run();
+            log.append("[");
+            log.append(action.getClass().getName());
+            log.append("-");
+            log.append(actionIsComplete ? "C": "R");
+            log.append("");
+
+            log.append("]");
             if(!actionIsComplete)
             {
                 allActionsComplete = false;
             }
+            
         }
-
+        
+        SmartDashboard.putString("AutonomousStatus", log.toString());
         return allActionsComplete;
     }
 

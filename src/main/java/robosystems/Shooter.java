@@ -77,12 +77,27 @@ public class Shooter{
 
     private final double AUTOMATIC_SHOOTING_ANGLE = 50;
 
+    private boolean mHasSeenTheTag;
+
     private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, false, false, false);
     //private final com.ctre.phoenix6.controls.VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, false, false, false);
 
     private LimelightManager mLimelightManager;
     
+    private Boolean mAnglerSoftLimitSwitchesEnabled = null;
+    
+    public void SetAnglerLimitSwitchesEnabledOrDisabled(boolean pEnabled)
+    {
 
+        if(mAnglerSoftLimitSwitchesEnabled == null || pEnabled != mAnglerSoftLimitSwitchesEnabled)
+        {
+            mAnglerMotor.enableSoftLimit(SoftLimitDirection.kForward, pEnabled);
+            mAnglerMotor.enableSoftLimit(SoftLimitDirection.kReverse, pEnabled);
+            mAnglerSoftLimitSwitchesEnabled = pEnabled;
+        }
+    }
+
+    
     private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted, TalonFXConfiguration pShooterConfig)
     {
 
@@ -120,7 +135,7 @@ public class Shooter{
     {
         CANSparkFlex returnValue = new CANSparkFlex(pDeviceID, MotorType.kBrushless);
         returnValue.setSmartCurrentLimit(39);      
-        returnValue.setIdleMode(IdleMode.kBrake);
+        returnValue.setIdleMode(IdleMode.kCoast); // returnValue.setIdleMode(IdleMode.kBreak); 
         returnValue.setInverted(pIsInverted);
         returnValue.setSoftLimit(SoftLimitDirection.kForward, 190);
         returnValue.setSoftLimit(SoftLimitDirection.kReverse, 10);
@@ -147,6 +162,9 @@ public class Shooter{
         return returnValue;
     }
 
+
+    
+    
 
     public Shooter(LimelightManager pLimelightManager) // initialization method
     {
@@ -181,6 +199,7 @@ public class Shooter{
         mHasCorrectSpeed = false;
         mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
 
+        mHasSeenTheTag = false;
         resetOutputRange();
 
     }
@@ -189,7 +208,10 @@ public class Shooter{
         return mHardReverseLimitSwitch.isPressed();
     }
 
-    
+    public void setHasSeenTheTag(boolean pHasSeenTheTag)
+    {
+        mHasSeenTheTag = pHasSeenTheTag;
+    }
     
 
     public void setSpeed(double topSpeed, double bottomSpeed){ //set speed to integer -1.0 <= n <= 1.0
@@ -433,8 +455,8 @@ public class Shooter{
 
         calculatedAngle += adjustmentFromZVelocity;
 
-        double adamOffset = -10;
-        calculatedAngle += adamOffset;
+        //double adamOffset = -10;
+        //calculatedAngle += adamOffset;
         SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
 
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
@@ -525,6 +547,11 @@ public class Shooter{
     public java.util.List<TalonFX> getSpeakers()
     {
         return Arrays.asList(mTopShooterRoller, mBottomShooterRoller);
+    }
+
+    public void TestOnlySetAnglerSpeed(double pSpeed)
+    {
+        mAnglerMotor.set(pSpeed);
     }
     
 }

@@ -100,6 +100,8 @@ public class SwerveDrive
 
     public void InitializeOdometry()
     {
+        if(mOdometry == null)
+        {
         //Swerve Drive Odometry Code add for Choreo
         //Adapted from https://github.com/SleipnirGroup/ChoreoSwerveBot/blob/main/src/main/java/frc/robot/subsystems/DriveSubsystem.java#L111
         mOdometry = new SwerveDriveOdometry(
@@ -113,6 +115,7 @@ public class SwerveDrive
             mSWWheel.GetPosition(),
             mNWWheel.GetPosition()
           });
+        }
     }
     
     //This should be called in each main loop iteration of the program.

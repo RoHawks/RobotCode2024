@@ -18,7 +18,7 @@ public class FollowTrajectoryAction extends AAction {
     private SwerveDrive mSwerveDrive;
     private boolean mIsFirstTrajectoryMovement;
     private Intake mIntake;
-    private boolean mShouldBeSuckingInRings;
+    private Boolean mShouldBeSuckingInRings;
 
     public boolean ShouldMirrorTrajectories() //To do - read this from driver station?
     {
@@ -65,7 +65,7 @@ public class FollowTrajectoryAction extends AAction {
 
 
 
-    public FollowTrajectoryAction(String pTrajectoryName, SwerveDrive pSwerveDrive, boolean pIsFirstTrajectoryMovement, Intake pIntake, boolean pShouldBeSuckingInRings)
+    public FollowTrajectoryAction(String pTrajectoryName, SwerveDrive pSwerveDrive, boolean pIsFirstTrajectoryMovement, Intake pIntake, Boolean pShouldBeSuckingInRings)
     {
         mTrajectory = Choreo.getTrajectory(pTrajectoryName);
         mSwerveDrive = pSwerveDrive;
@@ -93,16 +93,20 @@ public class FollowTrajectoryAction extends AAction {
         //Should generally work
         //But may not if someone bumps into us, becuase it will end before we got to where we want to be.
         mChoreoCommand.execute();
-        SmartDashboard.putBoolean("mShouldBeSuckingInRings",mShouldBeSuckingInRings);
-        if(mShouldBeSuckingInRings)
-        {
-          mIntake.setToInstaLaunch();
-        }
-        else
-        {
-          mIntake.setToHoldingSpeed();
-        }
         
+        if (mShouldBeSuckingInRings != null)
+        {
+          SmartDashboard.putBoolean("mShouldBeSuckingInRings",mShouldBeSuckingInRings);
+          if(mShouldBeSuckingInRings)
+          {
+            mIntake.setToInstaLaunch();
+          }
+          else
+          {
+            mIntake.setToHoldingSpeed();
+          }
+        }
+          
         return mChoreoCommand.isFinished();
     }
 

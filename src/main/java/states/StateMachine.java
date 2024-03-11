@@ -39,8 +39,8 @@ public class StateMachine
         TrapShootingState trapShootingState = new TrapShootingState(pControls);
         mStates.put(trapShootingState.GetState(), trapShootingState);
 
-        
-
+        EjectingState ejectingState = new EjectingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
+        mStates.put(ejectingState.GetState(), ejectingState);
         
         mCurrentState = intakingState.GetState();
     }

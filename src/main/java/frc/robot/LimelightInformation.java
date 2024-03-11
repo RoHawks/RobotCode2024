@@ -7,18 +7,47 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LimelightInformation {
 
-    private String mName;
-    private String mID;
     private String mHostname;
 
-    public LimelightInformation(String pName, String pID)
+    public LimelightInformation(String pID)
     {
-        mName = pName;
-        mID = pID;
+
         mHostname = "limelight-" + pID;
     }
 
     private double[] mCameraPoseTargetSpace;
+    private double[] mBotpose;
+
+    public void calculateBotpose(double pHorizontalOffsetMeters)
+    {
+        NetworkTable table = NetworkTableInstance.getDefault().getTable(mHostname);
+        double[] values = table.getValue("botpose").getDoubleArray();
+
+         boolean isNull = true;
+        for (double d : values)
+        {
+            if (Math.abs(d) > 1e-5)
+            {
+                isNull = false;
+            }
+        }
+        if (isNull)
+        {
+            mBotpose = null;
+        }
+
+        if (values != null)
+        {
+            values[0] += pHorizontalOffsetMeters;
+            mBotpose = values;
+        }
+        else
+        {
+            mCameraPoseTargetSpace = null;
+        }
+
+
+    }
 
 
     public void calculateCameraPoseTargetSpace(double pHorizontalOffsetMeters)
@@ -34,7 +63,7 @@ public class LimelightInformation {
             
             double[] camerapose_targetspace = getCameraPoseTargetSpace(json_dump);
             // double[] camerapose_targetspace = table.getValue("camerapose_targetspace").getDoubleArray();
-            SmartDashboard.putNumber("hereD", System.currentTimeMillis());
+            //SmartDashboard.putNumber("hereD", System.currentTimeMillis());
             
 
             boolean isNull = true;
@@ -59,9 +88,9 @@ public class LimelightInformation {
             {
                 mCameraPoseTargetSpace = null;
             }
-            SmartDashboard.putNumber("Lime: tA", table.getEntry("ta").getDouble(0));
+            //SmartDashboard.putNumber("Lime: tA", table.getEntry("ta").getDouble(0));
 
-            SmartDashboard.putNumber("Lime: tZ", mCameraPoseTargetSpace[2]);
+            //SmartDashboard.putNumber("Lime: tZ", mCameraPoseTargetSpace[2]);
 
         }
         catch (Exception e)
@@ -106,5 +135,10 @@ public class LimelightInformation {
     public double[] getCameraPoseTargetSpace()
     {
         return mCameraPoseTargetSpace;
+    }
+
+    public double[] getBotPose()
+    {
+        return mBotpose;
     }
 }

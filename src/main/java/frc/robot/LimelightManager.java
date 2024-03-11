@@ -12,9 +12,20 @@ public class LimelightManager
     public LimelightManager()
     {
         mLimeLights = new LimelightInformation[2];
-        mLimeLights[WEST_CAMERA] = new LimelightInformation("west", "west");
-        mLimeLights[EAST_CAMERA] = new LimelightInformation("east", "east");
+        mLimeLights[WEST_CAMERA] = new LimelightInformation( "west");
+        mLimeLights[EAST_CAMERA] = new LimelightInformation( "east");
     }
+
+    public void calculateBotpose()
+    {
+        for(int i = 0; i < mLimeLights.length; i++)
+        {
+            mLimeLights[i].calculateBotpose(
+                i == WEST_CAMERA ? 0: 0//-0.532 : 0                //this is 22.5 incvhes plus a tiny fuidge factor from experimetnation
+            );
+        }
+    }
+
 
     public void calculateCameraPoseTargetSpace()
     {
@@ -37,6 +48,11 @@ public class LimelightManager
     public double[] getCameraPoseTargetSpaceForSpecificCamera(int pCamera)
     {
         return mLimeLights[pCamera].getCameraPoseTargetSpace();
+    }
+
+    public double[] getBotposeForSpecificCamera(int pCamera)
+    {
+        return mLimeLights[pCamera].getBotPose();
     }
 
     public double[] getCameraPoseTargetSpace()

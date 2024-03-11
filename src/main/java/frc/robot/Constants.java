@@ -28,8 +28,8 @@ public class Constants {
     public static final double Z_VELOCITY_COMPENSATION = -17;
 
 
-    public static final double SHOOTER_HIGH_TOP_DEFAULT_SPEED = 85.0;//This has been 46 for a while, but now we need to scale it up based on the new gear ratio   u46.0; // at Townsend this was 46.0 but it doesn't seem like we can realistically hold 46
-    public static final double SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED = 85.0 * 3.0 / 4.0;//46.0 * 3.0/4.0; // at Townsend this was 46.0 * 3.0/4.0 but it doesn't seem like we can realistically hold 46
+    public static final double SHOOTER_HIGH_TOP_DEFAULT_SPEED = 46.0; //85.0;//This has been 46 for a while, but now we need to scale it up based on the new gear ratio   u46.0; // at Townsend this was 46.0 but it doesn't seem like we can realistically hold 46
+    public static final double SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED = 46.0 * 3.0 / 4.0;//85.0 * 0.68;//46.0 * 3.0/4.0; // at Townsend this was 46.0 * 3.0/4.0 but it doesn't seem like we can realistically hold 46
 
     public static final double SHOOTER_LOW_TOP_DEFAULT_SPEED = 46.0 * 0.5; // 46.0
     public static final double SHOOTER_LOW_BOTTOM_DEFAULT_SPEED = 46.0 * 3.0/4.0 * 0.5; //46.0 * 3.0/4.0

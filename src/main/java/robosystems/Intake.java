@@ -92,7 +92,7 @@ public class Intake {
         SmartDashboard.putNumber("Position At Breakbeam", mPositionAtBreakBeam);
     }
 
-    private void setSpeeds(double pBeltTopSpeed, double pBeltBottomSpeed, double pIntakeRollerSpeed)
+    public void setSpeeds(double pBeltTopSpeed, double pBeltBottomSpeed, double pIntakeRollerSpeed)
     {
         mConveyorBeltTop.set(pBeltTopSpeed);
         mConveyorBeltBottom.set(pBeltBottomSpeed);

@@ -46,6 +46,7 @@ public class Lights
 
     public void SetLightingScheme(LightingScheme pLightingScheme)
     {
+        SmartDashboard.putString("LightingSceme", pLightingScheme.name());
         switch(pLightingScheme)
         {
             case Off:
@@ -60,8 +61,8 @@ public class Lights
                 break;
             case HoldingButNoCameraLock:
                 mCurrentRed = 255;
-                mCurrentGreen =242;
-                mCurrentBlue = 0;
+                mCurrentGreen =174;
+                mCurrentBlue = 201;
                 break;
             case HoldingWithCameraLock:
                 mCurrentRed = 0;
