@@ -18,33 +18,49 @@ public class LimelightInformation {
     private double[] mCameraPoseTargetSpace;
     private double[] mBotpose;
 
+    public void SetPipeline(int pPipeline)
+    {
+        NetworkTableInstance.getDefault().getTable(mHostname).getEntry("pipeline").setNumber(pPipeline);
+    }
+
+
     public void calculateBotpose(double pHorizontalOffsetMeters)
     {
-        NetworkTable table = NetworkTableInstance.getDefault().getTable(mHostname);
-        double[] values = table.getValue("botpose").getDoubleArray();
-
-         boolean isNull = true;
-        for (double d : values)
+        //This can fail if the limelight is still starting up, etc.
+        //so just catch everything...
+        try
         {
-            if (Math.abs(d) > 1e-5)
+            NetworkTable table = NetworkTableInstance.getDefault().getTable(mHostname);
+            double[] values = table.getValue(AllianceInfo.GetInstance().GetBotposeTableName()).getDoubleArray();
+
+            boolean isNull = true;
+            for (double d : values)
             {
-                isNull = false;
+                if (Math.abs(d) > 1e-5)
+                {
+                    isNull = false;
+                }
+            }
+            if (isNull)
+            {
+                mBotpose = null;
+            }
+
+            if (values != null)
+            {
+                values[0] += pHorizontalOffsetMeters;
+                mBotpose = values;
+            }
+            else
+            {
+                mBotpose = null;
             }
         }
-        if (isNull)
+        catch(Exception e)
         {
             mBotpose = null;
         }
 
-        if (values != null)
-        {
-            values[0] += pHorizontalOffsetMeters;
-            mBotpose = values;
-        }
-        else
-        {
-            mCameraPoseTargetSpace = null;
-        }
 
 
     }
@@ -103,7 +119,7 @@ public class LimelightInformation {
     /* */
     private static double[] getCameraPoseTargetSpace(String json)
     {
-        SmartDashboard.putString("json", json);
+        //SmartDashboard.putString("json", json);
        try {
         int idx1 = json.indexOf("t6c_ts");
         int idx2 = json.indexOf("t6r_fs");
@@ -124,6 +140,7 @@ public class LimelightInformation {
         }
         return null;
        }
+
        catch (Exception e) {
         SmartDashboard.putString("cameraPostException", e.getLocalizedMessage());
         return null;
@@ -140,5 +157,52 @@ public class LimelightInformation {
     public double[] getBotPose()
     {
         return mBotpose;
+    }
+
+    public static double BotPose_GetDistanceFromEastFieldWall(double[] pBotposeResults)
+    {
+        return pBotposeResults[1];
+    }
+
+    public static double BotPose_GetDistanceFromAllianceStationWall(double[] pBotposeResults)
+    {
+        return pBotposeResults[0];
+    }
+
+    public static double BotPose_GetHorizontalDistanceFromAprilTag(double[] pBotposeResults)
+    {
+        return BotPose_GetDistanceFromEastFieldWall(pBotposeResults) - AllianceInfo.GetInstance().GetCentralAprilTagDistanceFromDriversRightWall();
+    }
+
+    public static double GetAngleToAprilTag(double[] pBotposeResults)
+    {
+        double y = BotPose_GetHorizontalDistanceFromAprilTag(pBotposeResults);
+        double z = BotPose_GetDistanceFromAllianceStationWall(pBotposeResults);
+        SmartDashboard.putNumber("AutoLogs Y", y);
+        SmartDashboard.putNumber("AutoLogs Z", z);
+        if (y > 0)
+        {
+            double theta = Math.toDegrees(Math.atan2(y,z));
+            SmartDashboard.putNumber("AutoLogs: theta1", 360 - theta);
+            return 360 - theta;
+        }
+        else
+        {
+            double theta = Math.toDegrees(Math.atan2(-y,z));
+            SmartDashboard.putNumber("AutoLogs: theta2", theta);
+            return theta;
+        }
+    }
+
+    public static boolean isValidBotPoseResults(double[] pBotposeResults)
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            if(Math.abs(pBotposeResults[i]) > 0.001)
+            {
+                return true;
+            }
+        }
+       return false;
     }
 }

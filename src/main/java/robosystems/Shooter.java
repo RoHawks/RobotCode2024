@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -16,6 +17,7 @@ import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
+import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -25,8 +27,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
+import frc.robot.LimelightInformation;
 import frc.robot.LimelightManager;
-import states.ShooterMode; 
+import states.ShooterMode;
+import states.ShootingState; 
 
 /*
  * package robosystems;
@@ -61,8 +65,9 @@ public class Shooter{
     private TalonFX mTopShooterRoller;
     private TalonFX mBottomShooterRoller;
 
-    private CANSparkFlex mAnglerMotor;
-    private PositionVoltage mPositionVoltage;
+    //private CANSparkFlex mAnglerMotor;
+    private CANSparkMax mAnglerMotor;
+    
 
     private SparkLimitSwitch mHardForwardLimitSwitch;
     private SparkLimitSwitch mHardReverseLimitSwitch;
@@ -70,14 +75,14 @@ public class Shooter{
     private boolean mHasCorrectSpeed;
     private double mShooterAtRightSpeedStartingTime;
     
-    private boolean shootingFinished;
+    //private boolean shootingFinished;
     private SparkPIDController mPIDController;
 
     private final double mMoveBackwardsSpeed = -0.2;
 
-    private final double AUTOMATIC_SHOOTING_ANGLE = 50;
+    //private final double AUTOMATIC_SHOOTING_ANGLE = 50;
 
-    private boolean mHasSeenTheTag;
+    //private boolean mHasSeenTheTag;
 
     private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, false, false, false);
     //private final com.ctre.phoenix6.controls.VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, false, false, false);
@@ -101,25 +106,28 @@ public class Shooter{
     private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted, TalonFXConfiguration pShooterConfig)
     {
 
-
-
-
-       
-
         TalonFX returnValue =  new TalonFX(pDeviceID);  
         returnValue.setInverted(pIsInverted);
         returnValue.getConfigurator().apply(pShooterConfig);
         
         MotorOutputConfigs motorOutputConfig = new MotorOutputConfigs();
         motorOutputConfig.NeutralMode = NeutralModeValue.Coast;
+        returnValue.getConfigurator().apply(motorOutputConfig);
         
         
         ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
         clrc.DutyCycleClosedLoopRampPeriod = 0.5;
         clrc.VoltageClosedLoopRampPeriod = 0.5;
-        
+        returnValue.getConfigurator().apply(clrc);
 
-        returnValue.getConfigurator().apply(motorOutputConfig);
+        CurrentLimitsConfigs clc = new CurrentLimitsConfigs();
+        clc.SupplyCurrentLimit = 45;//amps
+        clc.SupplyCurrentLimitEnable = true;
+        clc.SupplyCurrentThreshold = 0.05;//seconds
+        returnValue.getConfigurator().apply(clc);
+
+        
+        
 
 
 
@@ -131,9 +139,9 @@ public class Shooter{
         return mAnglerMotor.getEncoder().getPosition();
     }
 
-    private CANSparkFlex CreateAnglerMotor(int pDeviceID, boolean pIsInverted)
+    private CANSparkMax CreateAnglerMotor(int pDeviceID, boolean pIsInverted)
     {
-        CANSparkFlex returnValue = new CANSparkFlex(pDeviceID, MotorType.kBrushless);
+        CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushless);
         returnValue.setSmartCurrentLimit(39);      
         returnValue.setIdleMode(IdleMode.kCoast); // returnValue.setIdleMode(IdleMode.kBreak); 
         returnValue.setInverted(pIsInverted);
@@ -173,6 +181,26 @@ public class Shooter{
         mAnglerMotor =  CreateAnglerMotor(14, true); 
         
         TalonFXConfiguration topShooterConfig = new TalonFXConfiguration();            
+        topShooterConfig.Slot0.kS = -0.065667;
+        topShooterConfig.Slot0.kP = 0.13917;
+        topShooterConfig.Slot0.kI = 0;
+        topShooterConfig.Slot0.kD = 0.02;
+        topShooterConfig.Slot0.kV = 0.16182;
+        
+        topShooterConfig.Slot0.kA = 0;
+
+        mTopShooterRoller = CreateShooterMotor(4, true, topShooterConfig);
+
+        TalonFXConfiguration bottomShooterConfig = new TalonFXConfiguration();            
+        bottomShooterConfig.Slot0.kS = -0.84808;
+        bottomShooterConfig.Slot0.kP = 0.14289;
+        bottomShooterConfig.Slot0.kI = 0;
+        bottomShooterConfig.Slot0.kD = 0.02;
+        bottomShooterConfig.Slot0.kV = 0.17996;
+        bottomShooterConfig.Slot0.kA = 0;
+
+        /*These were from the ill fated belt driven test
+        TalonFXConfiguration topShooterConfig = new TalonFXConfiguration();            
         topShooterConfig.Slot0.kS = 0.183;
         topShooterConfig.Slot0.kP = 0.0047239;
         topShooterConfig.Slot0.kI = 0;
@@ -190,16 +218,17 @@ public class Shooter{
         bottomShooterConfig.Slot0.kD = 0.02;
         bottomShooterConfig.Slot0.kV = 0.12487;
         bottomShooterConfig.Slot0.kA = 0;
+        */
 
         mBottomShooterRoller = CreateShooterMotor(5, false, bottomShooterConfig);
 
         mPIDController = mAnglerMotor.getPIDController();
-        shootingFinished = true;
+        //shootingFinished = true;
 
         mHasCorrectSpeed = false;
         mShooterAtRightSpeedStartingTime = System.currentTimeMillis();
 
-        mHasSeenTheTag = false;
+        //mHasSeenTheTag = false;
         resetOutputRange();
 
     }
@@ -208,11 +237,11 @@ public class Shooter{
         return mHardReverseLimitSwitch.isPressed();
     }
 
-    public void setHasSeenTheTag(boolean pHasSeenTheTag)
+    /* Not used 
     {
         mHasSeenTheTag = pHasSeenTheTag;
     }
-    
+    */
 
     public void setSpeed(double topSpeed, double bottomSpeed){ //set speed to integer -1.0 <= n <= 1.0
         if (Math.abs(topSpeed) > 0.01)
@@ -333,7 +362,7 @@ public class Shooter{
             else
             {
                 mHasCorrectSpeed = true;
-                if (System.currentTimeMillis() - mShooterAtRightSpeedStartingTime > 1000)
+                if (System.currentTimeMillis() - mShooterAtRightSpeedStartingTime > 200)
                 {
                     return true;
                 }
@@ -372,6 +401,10 @@ public class Shooter{
         SmartDashboard.putNumber("Shooter: Time Elapsed Since Shooter Reached Right Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
         SmartDashboard.putNumber("Shooter: Angler Output Percentage", mAnglerMotor.getAppliedOutput());
         SmartDashboard.putNumber("Shooter: Angler Output Current", mAnglerMotor.getOutputCurrent());
+        SmartDashboard.putNumber("Shooter: Angler Current Encoder Reading", GetAnglerEncoderReading() );
+        SmartDashboard.putNumber("Shooter: Angler Target Angle", mLastTargetAngle);
+        
+
     }   
 
 
@@ -396,12 +429,15 @@ public class Shooter{
         }
         else if (pShooterMode == ShooterMode.AutoAim)
         {
-            automaticAngle(pChassisSpeeds);
+            automaticAngleWithRotationImplementation(pChassisSpeeds);
         }
         
     }
 
-
+    public void ResetNonCameraAutoAimAngle()
+    {
+        mLastCalculatedAutoAngleFromCamera = Constants.DEFAULT_AUTO_AIM_ANGLE;
+    }
 
 
     //In case we very briefly lose view of the AprilTag with camera, this variable will keep track
@@ -419,19 +455,19 @@ public class Shooter{
 
         double zDisplacement = -1 * cameraPoseTargetSpace[2];
 
-        SmartDashboard.putNumber("Lime Calcs: zDisplacement", zDisplacement);
+        //SmartDashboard.putNumber("Lime Calcs: zDisplacement", zDisplacement);
 
         double adjustedYDisplacement = yDisplacement * (83.0/57.0);
 
-        SmartDashboard.putNumber("Lime Calcs: adjustedYDisplacement ", adjustedYDisplacement );
+        //SmartDashboard.putNumber("Lime Calcs: adjustedYDisplacement ", adjustedYDisplacement );
 
         double adjustedZDisplacement = zDisplacement + (0.36);
 
-        SmartDashboard.putNumber("Lime Calcs: adjustedZDisplacement ", adjustedZDisplacement );
+        //SmartDashboard.putNumber("Lime Calcs: adjustedZDisplacement ", adjustedZDisplacement );
         
         double calculatedAngle = Math.toDegrees(Math.atan2(adjustedYDisplacement, adjustedZDisplacement));
         
-        SmartDashboard.putNumber("Lime Calcs: angleToTheShooter ", calculatedAngle);
+        //SmartDashboard.putNumber("Lime Calcs: angleToTheShooter ", calculatedAngle);
         
         calculatedAngle = calculatedAngle - Constants.INITIAL_SHOOTER_ANGLE_TO_ACCOUNT_FOR;
 
@@ -443,7 +479,7 @@ public class Shooter{
         double adjustmentFromZVelocity;
         if (pChassisSpeeds != null)
         {
-            SmartDashboard.putNumber("pChassisSpeeds.vxMetersPerSecond", pChassisSpeeds.vxMetersPerSecond);
+            //SmartDashboard.putNumber("pChassisSpeeds.vxMetersPerSecond", pChassisSpeeds.vxMetersPerSecond);
             double percentageOfMaximumZSpeed = pChassisSpeeds.vxMetersPerSecond / maxSpeedMetersPerSecond;
             adjustmentFromZVelocity = percentageOfMaximumZSpeed * Constants.Z_VELOCITY_COMPENSATION;
         }
@@ -451,29 +487,177 @@ public class Shooter{
         {
             adjustmentFromZVelocity = 0;
         }
-        SmartDashboard.putNumber("Lime Calcs: adjustmentFromZVelocity", adjustmentFromZVelocity);
+        //SmartDashboard.putNumber("Lime Calcs: adjustmentFromZVelocity", adjustmentFromZVelocity);
+
+        calculatedAngle += adjustmentFromZVelocity;
+
+        double adamOffset = -15;
+        calculatedAngle += adamOffset;
+        //SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
+
+        mLastCalculatedAutoAngleFromCamera = calculatedAngle;
+        return calculatedAngle;
+    }
+
+    public double calculateAutoAngle_MegaTagBotPose(ChassisSpeeds pChassisSpeeds)
+    {
+        double[] botPose = mLimelightManager.getBotPoseFromCameraBasedOnChassisSpeeds(pChassisSpeeds);
+        if (!LimelightInformation.isValidBotPoseResults(botPose))
+        {
+            //return Constants.DEFAULT_AUTO_AIM_ANGLE;
+            return mLastCalculatedAutoAngleFromCamera;
+        }
+        double yDisplacement = 1.12;
+
+        double zDisplacement = LimelightInformation.BotPose_GetDistanceFromAllianceStationWall(botPose);
+
+        //SmartDashboard.putNumber("Lime Calcs: zDisplacement", zDisplacement);
+
+        double adjustedYDisplacement = yDisplacement * (83.0/57.0);
+
+        //SmartDashboard.putNumber("Lime Calcs: adjustedYDisplacement ", adjustedYDisplacement );
+
+        double adjustedZDisplacement = zDisplacement + (0.36);
+
+        //SmartDashboard.putNumber("Lime Calcs: adjustedZDisplacement ", adjustedZDisplacement );
+        
+        double calculatedAngle = Math.toDegrees(Math.atan2(adjustedYDisplacement, adjustedZDisplacement));
+        
+        //SmartDashboard.putNumber("Lime Calcs: angleToTheShooter ", calculatedAngle);
+        
+        calculatedAngle = calculatedAngle - Constants.INITIAL_SHOOTER_ANGLE_TO_ACCOUNT_FOR;
+
+
+        calculatedAngle = calculatedAngle * (1.0 / Constants.ANGLER_ROTATIONS_TO_ANGLES);
+
+        
+        double maxSpeedMetersPerSecond = 5.0;
+        double adjustmentFromZVelocity;
+        if (pChassisSpeeds != null)
+        {
+            //SmartDashboard.putNumber("pChassisSpeeds.vxMetersPerSecond", pChassisSpeeds.vxMetersPerSecond);
+            double percentageOfMaximumZSpeed = pChassisSpeeds.vxMetersPerSecond / maxSpeedMetersPerSecond;
+            adjustmentFromZVelocity = percentageOfMaximumZSpeed * Constants.Z_VELOCITY_COMPENSATION;
+        }
+        else
+        {
+            adjustmentFromZVelocity = 0;
+        }
+        //SmartDashboard.putNumber("Lime Calcs: adjustmentFromZVelocity", adjustmentFromZVelocity);
 
         calculatedAngle += adjustmentFromZVelocity;
 
         //double adamOffset = -10;
         //calculatedAngle += adamOffset;
-        SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
+        //SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
 
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
         return calculatedAngle;
     }
+
+    public double calculateAutoAngleWithRotations_MegaTagBotPose(ChassisSpeeds pChassisSpeeds)
+    {
+        double[] botPose = mLimelightManager.getBotPoseFromCameraBasedOnChassisSpeeds(pChassisSpeeds);
+        if (!LimelightInformation.isValidBotPoseResults(botPose))
+        {
+            return mLastCalculatedAutoAngleFromCamera;
+        }
+        double yDisplacement = 1.12;
+
+        double zDisplacement = LimelightInformation.BotPose_GetDistanceFromAllianceStationWall(botPose);
+        double xDisplacement = LimelightInformation.BotPose_GetHorizontalDistanceFromAprilTag(botPose);
+
+        SmartDashboard.putNumber("AutoLog: xDisplacement", xDisplacement);
+
+        double adjustedYDisplacement = yDisplacement * (83.0/57.0);
+
+        double adjustedZDisplacement = zDisplacement + (0.36);
+
+        SmartDashboard.putNumber("AutoLog: xDisplacement", adjustedZDisplacement);
+
+        double hypotenuse = Math.sqrt(Math.pow(adjustedZDisplacement,2) + Math.pow(xDisplacement,2));
+
+        double calculatedAngle = Math.toDegrees(Math.atan2(adjustedYDisplacement, hypotenuse));
+    
+        
+        calculatedAngle = calculatedAngle - Constants.INITIAL_SHOOTER_ANGLE_TO_ACCOUNT_FOR;
+
+
+        calculatedAngle = calculatedAngle * (1.0 / Constants.ANGLER_ROTATIONS_TO_ANGLES);
+
+        
+        double maxSpeedMetersPerSecond = 5.0;
+        double adjustmentFromZVelocity;
+        if (pChassisSpeeds != null)
+        {
+            double percentageOfMaximumZSpeed = pChassisSpeeds.vxMetersPerSecond / maxSpeedMetersPerSecond;
+            adjustmentFromZVelocity = percentageOfMaximumZSpeed * Constants.Z_VELOCITY_COMPENSATION;
+        }
+        else
+        {
+            adjustmentFromZVelocity = 0;
+        }
+
+        calculatedAngle += adjustmentFromZVelocity;
+
+        mLastCalculatedAutoAngleFromCamera = calculatedAngle;
+
+        SmartDashboard.putNumber("AutoLog: calculatedAngle", calculatedAngle);
+        return calculatedAngle;
+    }
+
+
     public void automaticAngle(ChassisSpeeds pChassisSpeeds) 
     {
-        double angle = calculateAutoAngle(pChassisSpeeds);
+        double angle;
+        if(ShootingState.USE_MEGA_TAG_BOT_POSE)
+        {
+            angle = calculateAutoAngle_MegaTagBotPose(pChassisSpeeds);
+        }
+        else
+        {
+            angle = calculateAutoAngle(pChassisSpeeds);
+        }
+        
+        
+        setAngle(angle);
+
+    }
+
+    public void automaticAngleWithRotationImplementation(ChassisSpeeds pChassisSpeeds) 
+    {
+        double angle;
+        if(ShootingState.USE_MEGA_TAG_BOT_POSE)
+        {
+            angle = calculateAutoAngleWithRotations_MegaTagBotPose(pChassisSpeeds);
+        }
+        else
+        {
+            SmartDashboard.putString("THERE IS AN ERROR IN THE CODE", "PLEASE NOTICE ME");
+            angle = calculateAutoAngle(pChassisSpeeds);
+        }
+        
+        
         setAngle(angle);
 
     }
 
     public boolean getIfAutomaticAnglerInRange(ChassisSpeeds pChassisSpeeds)
     {
-        double angle = calculateAutoAngle(pChassisSpeeds);
+         double angle;
+        if(ShootingState.USE_MEGA_TAG_BOT_POSE)
+        {
+            angle = calculateAutoAngle_MegaTagBotPose(pChassisSpeeds);
+        }
+        else
+        {
+            angle = calculateAutoAngle(pChassisSpeeds);
+        }
         double calculatedError = angle - mAnglerMotor.getEncoder().getPosition();
-        SmartDashboard.putNumber("AnglerError", calculatedError);
+        
+
+
+
         if (Math.abs(calculatedError) < Constants.ANGLER_ACCEPTABLE_ERROR)
         {
             return true;
@@ -488,7 +672,7 @@ public class Shooter{
     private double mLastTargetAngle;
     public void setAngle(double pDesiredPosition) //needs to be implemented
     {
-        SmartDashboard.putNumber("EXCITING: Last Requested Angle To Shoot At", pDesiredPosition);
+        //SmartDashboard.putNumber("EXCITING: Last Requested Angle To Shoot At", pDesiredPosition);
         mLastTargetAngle = pDesiredPosition;
         mAnglerMotor.getPIDController().setReference(pDesiredPosition, ControlType.kPosition);
 
@@ -502,7 +686,7 @@ public class Shooter{
     public void goToTrapShootAngle()
     {
 
-        SmartDashboard.putNumber("Encoder says ", mAnglerMotor.getEncoder().getPosition());
+        //SmartDashboard.putNumber("Encoder says ", mAnglerMotor.getEncoder().getPosition());
         mAnglerMotor.getPIDController().setReference(Constants.CLIMBING_ANGLE, ControlType.kPosition);
     
     }
@@ -549,9 +733,19 @@ public class Shooter{
         return Arrays.asList(mTopShooterRoller, mBottomShooterRoller);
     }
 
-    public void TestOnlySetAnglerSpeed(double pSpeed)
+    public void TestOnly_SetAnglerSpeed(double pSpeed)
     {
         mAnglerMotor.set(pSpeed);
+    }
+ 
+    public void TestOnly_SetTopShooterSpeed(double pSpeed)
+    {
+        mTopShooterRoller.set(pSpeed);
+    }
+
+    public void TestOnly_SetBottomShooterSpeed(double pSpeed)
+    {
+        mBottomShooterRoller.set(pSpeed);
     }
     
 }

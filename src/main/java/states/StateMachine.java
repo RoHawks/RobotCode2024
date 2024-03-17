@@ -24,13 +24,13 @@ public class StateMachine
         IntakingState intakingState = new IntakingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
         mStates.put(intakingState.GetState(), intakingState);
 
-        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
+        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager);
         mStates.put(holdingState.GetState(), holdingState);
 
         ShootingState shootingState = new ShootingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager);
         mStates.put(shootingState.GetState(), shootingState);
 
-        ClimbingState climbingState = new ClimbingState(pSwerveDrive, pClimberArms, pShooter, pIntake);
+        ClimbingState climbingState = new ClimbingState(pSwerveDrive, pClimberArms, pShooter, pIntake, pControls);
         mStates.put(climbingState.GetState(), climbingState);
 
         ClimbingPreparationState climbingPreparationState = new ClimbingPreparationState(pSwerveDrive, pClimberArms, pShooter, pControls, pIntake);
@@ -80,13 +80,13 @@ public class StateMachine
 
 
         AState currentStateObject = mStates.get(mCurrentState);
-        SmartDashboard.putString("CurrentState", currentStateObject.GetName());
+        //SmartDashboard.putString("CurrentState", currentStateObject.GetName());
         NextStateInfo nextStateInfo = currentStateObject.Run();
         if(nextStateInfo.GetNextState() != mCurrentState)
         {            
             currentStateObject.ExitState();
             
-            SmartDashboard.putString("Next State Info", (nextStateInfo.GetNextState().toString()));
+            //SmartDashboard.putString("Next State Info", (nextStateInfo.GetNextState().toString()));
 
             AState newState = mStates.get(nextStateInfo.GetNextState());
             /*
@@ -98,6 +98,11 @@ public class StateMachine
             newState.EnterState(nextStateInfo.GetNextStateParameter());
             mCurrentState = nextStateInfo.GetNextState();
         }        
+    }
+
+    public void log()
+    {
+        mStates.get(mCurrentState).log();
     }
     
 }

@@ -114,4 +114,9 @@ public class FalconTranslationSystem implements ITranslationSystem{
     {
         return mFalcon.getMotorOutputPercent();
     }
+
+    public double GetCurrentDraw()
+    {
+        return mFalcon.getSupplyCurrent();
+    }
 }

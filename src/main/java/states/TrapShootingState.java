@@ -20,6 +20,8 @@ public class TrapShootingState extends AState
     {
         super.EnterState(pEntryParameter);
         mShooterMode = (ShooterMode) pEntryParameter;
+        mControls.TurnOffVibrate();
+        
     }
 
     public void ExitState()

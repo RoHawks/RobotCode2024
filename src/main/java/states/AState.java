@@ -1,5 +1,7 @@
 package states;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public abstract class AState
 {
     protected long mEntryTime;
@@ -30,6 +32,17 @@ public abstract class AState
 
     protected abstract States GetState();
     protected abstract String GetName();
+
+    protected void logStateInfo()
+    {
+
+    }
+    
+    protected void log()
+    {
+        SmartDashboard.putString("CurrentState", GetName());
+        logStateInfo();
+    }
 
 
 

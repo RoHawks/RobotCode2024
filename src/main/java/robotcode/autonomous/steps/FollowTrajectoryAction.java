@@ -8,6 +8,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.AllianceInfo;
 import robosystems.Intake;
 import robotcode.autonomous.AAction;
 import universalSwerve.SwerveDrive;
@@ -22,7 +23,7 @@ public class FollowTrajectoryAction extends AAction {
 
     public boolean ShouldMirrorTrajectories() //To do - read this from driver station?
     {
-      return false;
+        return AllianceInfo.GetInstance().ShouldFlipAutos();
     }
     
   private Command mChoreoCommand;
@@ -80,7 +81,8 @@ public class FollowTrajectoryAction extends AAction {
         super.EnterAction();
         if(mIsFirstTrajectoryMovement)
         {
-            mSwerveDrive.ResetOdometry(mTrajectory.getInitialPose());
+            //mSwerveDrive.ResetOdometry(mTrajectory.getInitialPose());
+            mSwerveDrive.ResetOdometry(mTrajectory.sample(-1, ShouldMirrorTrajectories()).getPose());
         }
         mChoreoCommand.initialize();
 

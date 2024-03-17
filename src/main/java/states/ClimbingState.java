@@ -15,18 +15,21 @@ public class ClimbingState extends AState
     private SwerveDrive mSwerveDrive; 
     private Shooter mShooter;
     private Intake mIntake;
+    private Controls mControls;
 
-    public ClimbingState(SwerveDrive pSwerveDrive, ClimberArms pClimberArms, Shooter pShooter, Intake pIntake){
+    public ClimbingState(SwerveDrive pSwerveDrive, ClimberArms pClimberArms, Shooter pShooter, Intake pIntake, Controls pControls){
         mClimberArms = pClimberArms;
         mSwerveDrive = pSwerveDrive;
         mShooter = pShooter;
         mIntake = pIntake;
+        mControls = pControls;
     }
 
     public void EnterState(Object pEntryParameter)
     {
         super.EnterState(pEntryParameter);
         mShooterMode = (ShooterMode) pEntryParameter;
+        mControls.TurnOffVibrate();
     }
 
     public void ExitState()

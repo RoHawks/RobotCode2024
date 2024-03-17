@@ -60,6 +60,7 @@ public class Wheel
             SmartDashboard.putNumber(GetWheelLabel().Text()+"_CurrentSpeed", mTranslationSystem.GetVelocity());
             SmartDashboard.putNumber(GetWheelLabel().Text()+"_TargetSpeed", mTargetSpeed);
             SmartDashboard.putNumber(GetWheelLabel().Text()+"_RawAngle", mRotationSystem.GetRawCurrentAngle());
+            SmartDashboard.putNumber(GetWheelLabel().Text()+"_DriveCurrent", mTranslationSystem.GetCurrentDraw());
         }
     }
 
@@ -198,12 +199,14 @@ public class Wheel
      */
     public SwerveModulePosition GetPosition() 
     {
+        /*
         if(mLabel == WheelLabel.NE)
         {
             SmartDashboard.putNumber("mTranslationSystem.GetDistanceTravelled()", mTranslationSystem.GetDistanceTravelled());
             SmartDashboard.putNumber("mRotationSystem.GetCurrentAngle()", mRotationSystem.GetCurrentAngle());
             
         }
+        */
         return new SwerveModulePosition(
         //ATS not sure if I need a negative here.
         //Find out experimentalls

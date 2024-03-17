@@ -716,7 +716,7 @@ public class SwerveDrive
 
     public void Run(ISwerveControls pControls)
     {
-        SmartDashboard.putNumber("Old Gyro Angle", mGyroscope.GetCurrentAngle());
+        //SmartDashboard.putNumber("Old Gyro Angle", mGyroscope.GetCurrentAngle());
         SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
         if(nudgingDirection == SwerveNudgingDirection.NONE)
         {
@@ -786,6 +786,11 @@ public class SwerveDrive
     public void SetGyroscopeCurrentAngle(double pCurrentAngle)
     {
         mGyroscope.SetCurrentAngle(pCurrentAngle);
+    }
+
+    public double GetGyroscopeCurrentAngle()
+    {
+        return mGyroscope.GetCurrentAngle();
     }
 
     public void ResetDistanceTravelled()

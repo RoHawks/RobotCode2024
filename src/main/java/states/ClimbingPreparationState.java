@@ -34,6 +34,7 @@ public class ClimbingPreparationState extends AState
         super.EnterState(pEntryParameter);
         ApproachingClimberControls.Instance.setTimeSinceEnteredClimbingState(System.currentTimeMillis());
         mShooterMode = (ShooterMode) pEntryParameter;
+        mControls.TurnOffVibrate();
     }
 
     public void ExitState()

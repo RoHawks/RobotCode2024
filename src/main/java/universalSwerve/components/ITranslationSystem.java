@@ -19,6 +19,7 @@ public interface ITranslationSystem {
     void StopEverything();
 
     double GetPercentOutput();
+    double GetCurrentDraw();
 
     
 }

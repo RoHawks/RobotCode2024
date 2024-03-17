@@ -7,14 +7,20 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkLimitSwitch;
+import com.revrobotics.CANDigitalInput;
+import com.revrobotics.CANDigitalInput.LimitSwitchPolarity;
 import com.revrobotics.SparkRelativeEncoder.Type;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class ExtendoArm {
     private CANSparkMax mExtendoMotor;
     private RelativeEncoder mExtendoEncoder;
+    private SparkLimitSwitch mTrapIntakeLimitSwitch;
     
-    private double LOW_GOAL_TARGET = -2100; //Replace with proper value
-    private double TRAP_TARGET = -2800; //Replace with proper value
+    private double LOW_GOAL_TARGET = -1500; //Replace with proper value
+    private double TRAP_TARGET = -2000; //Replace with proper value
     private double RETRACT_TARGET = -50;
    
     public void testOnlyRunAtSpeed(double pSpeed)
@@ -35,15 +41,18 @@ public class ExtendoArm {
         returnValue.setInverted(pIsInverted);
 
         returnValue.setSoftLimit(SoftLimitDirection.kForward, -20);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -2500);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -3500);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
         
 
-        returnValue.getPIDController().setP(0.005);
-        returnValue.getPIDController().setI(0.000);
+        returnValue.getPIDController().setP(0.0014);
+        returnValue.getPIDController().setI(0.000004);
         returnValue.getPIDController().setD(0.00);
         returnValue.getPIDController().setFF(0.00);
+        returnValue.getPIDController().setIZone(500);
+
+        returnValue.getPIDController().setOutputRange(-1, 1);
 
         returnValue.burnFlash();
         return returnValue;
@@ -54,16 +63,27 @@ public class ExtendoArm {
         return mExtendoMotor.getOutputCurrent();
     }
 
+    public boolean GetTrapLimitSwitch()
+    {
+        return mTrapIntakeLimitSwitch.isPressed();
+    }
+
+
 
     // Constructor
     public ExtendoArm() {
         mExtendoMotor =  CreateExtendoArmsMotor(7,false);
         mExtendoEncoder = mExtendoMotor.getEncoder(Type.kQuadrature, 1);
+
+        mTrapIntakeLimitSwitch = mExtendoMotor.getForwardLimitSwitch(SparkLimitSwitch.Type.kNormallyClosed);
+        
     }
 
+    private double mLastTarget = 0;
     public void goToPosition(double pPosition)
     {
-         mExtendoMotor.getPIDController().setReference(pPosition, ControlType.kPosition);
+        mLastTarget = pPosition;
+        mExtendoMotor.getPIDController().setReference(pPosition, ControlType.kPosition);
     }
 
 
@@ -97,5 +117,15 @@ public class ExtendoArm {
     public void stopMotor()
     {
         mExtendoMotor.stopMotor();
+    }
+
+
+    public void logExtendoArm()
+    {
+        SmartDashboard.putNumber("ExtendoArm-Output", mExtendoMotor.getAppliedOutput());
+        SmartDashboard.putNumber("ExtendoArm-Current", mExtendoMotor.getOutputCurrent());
+        SmartDashboard.putNumber("ExtendoArm-Position", mExtendoEncoder.getPosition());
+        SmartDashboard.putNumber("ExtendoArm-TargetPosition", mLastTarget);
+    
     }
 }

@@ -41,21 +41,26 @@ public class Functionality {
         if(pControls.GetPrepareForHighGoalManual())
         {
             returnValue = ShooterMode.HighGoalManual;
+            LimelightManager.GetInstance().SetPipeline(LimelightManager.PIPELINE_FOR_DRIVE_BY_SHOOTING);
         }
         else if(pControls.GetPrepareForHighGoalDriveBy())
         {
             returnValue = ShooterMode.HighGoalDriveBy;
+            LimelightManager.GetInstance().SetPipeline(LimelightManager.PIPELINE_FOR_DRIVE_BY_SHOOTING);
         }
         else if(pControls.GetPrepareForLowGoal())
         {
             returnValue = ShooterMode.LowGoal;
+            LimelightManager.GetInstance().SetPipeline(LimelightManager.PIPELINE_FOR_DRIVE_BY_SHOOTING);
         }
         else if(pControls.GetPrepareForAutoAim())
         {
             returnValue = ShooterMode.AutoAim;
+            LimelightManager.GetInstance().SetPipeline(LimelightManager.PIPELINE_FOR_DRIVE_BY_SHOOTING);
         }
         return returnValue;
     }
+
     
 
     

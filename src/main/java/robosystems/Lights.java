@@ -24,7 +24,7 @@ public class Lights
     public void Run()
     {
 
-        SmartDashboard.putString("LED", "" + mCurrentRed + "," + mCurrentGreen + "," + mCurrentBlue);
+        //SmartDashboard.putString("LED", "" + mCurrentRed + "," + mCurrentGreen + "," + mCurrentBlue);
         for (var i = 0; i < mLedBuffer.getLength(); i++) 
         {      
             mLedBuffer.setRGB(i, mCurrentRed, mCurrentGreen, mCurrentBlue);
@@ -46,7 +46,7 @@ public class Lights
 
     public void SetLightingScheme(LightingScheme pLightingScheme)
     {
-        SmartDashboard.putString("LightingSceme", pLightingScheme.name());
+        //SmartDashboard.putString("LightingSceme", pLightingScheme.name());
         switch(pLightingScheme)
         {
             case Off:

@@ -104,13 +104,13 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         double rpmsAtMotor = rpms / mGearRatio;
         //SmartDashboard.putNumber("rpmsAtMotor", rpmsAtMotor);
         double targetVelocity = Conversions.RPMsToTalonFXVelocityUnit(rpmsAtMotor);
-        SmartDashboard.putNumber("TargetVelocity", targetVelocity);
+        //SmartDashboard.putNumber("TargetVelocity", targetVelocity);
     
         
         StatusCode sc = mFalcon.setControl(mVoltageVelocity.withVelocity(-1.0 * targetVelocity));//why do we need a negative here?  It seems like none of the invert options work....
         //StatusCode sc = mFalcon.setControl(mVelocityDutyCycle.withVelocity(-1.0 * targetVelocity));//why do we need a negative here?  It seems like none of the invert options work....
         
-        SmartDashboard.putString("SetControl cs", sc.toString());
+        //SmartDashboard.putString("SetControl cs", sc.toString());
         
     }
 
@@ -147,9 +147,9 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         pidConfiguration.Slot0.kP = pPidfConfiguration.D();
         pidConfiguration.Slot0.kV = pPidfConfiguration.F();
         //pidConfiguration.Slot0.kS = pPidfConfiguration.S();
-        SmartDashboard.putNumber("KV", pPidfConfiguration.F());
+        //SmartDashboard.putNumber("KV", pPidfConfiguration.F());
         StatusCode statusCode = mFalcon.getConfigurator().apply(pidConfiguration);
-        SmartDashboard.putString("StatusCode", statusCode.toString());
+        //SmartDashboard.putString("StatusCode", statusCode.toString());
         
     }
 
@@ -167,5 +167,10 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     public java.util.List<TalonFX> GetSpeakers()
     {
         return Arrays.asList(mFalcon);
+    }
+
+    public double GetCurrentDraw()
+    {
+        return mFalcon.getSupplyCurrent().getValueAsDouble();
     }
 }

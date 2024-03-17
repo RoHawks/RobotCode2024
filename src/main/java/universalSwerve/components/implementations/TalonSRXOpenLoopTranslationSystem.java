@@ -86,5 +86,10 @@ public class TalonSRXOpenLoopTranslationSystem implements ITranslationSystem{
     public double GetPercentOutput() {
        return mLastSetPercentOutput;
     }
+
+    public double GetCurrentDraw()
+    {
+        return mTalonSRX.getSupplyCurrent();
+    }
     
 }

@@ -5,6 +5,8 @@ import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Functionality;
+import frc.robot.LimelightInformation;
+import frc.robot.LimelightManager;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
 import robosystems.ExtendoArm;
@@ -21,6 +23,7 @@ public class HoldingState extends AState {
     private ExtendoArm mExtendoArm;
     private Controls mControls;
     private Lights mLights;
+    private LimelightManager mLimelightManager;
 
     private HoldingMode mHoldingMode; // ARGH everything else is ShooterMode IntakeMode this naming convention DOESNT WORK for HoldingMode 
     private ShooterMode mShooterMode;
@@ -37,7 +40,8 @@ public class HoldingState extends AState {
         Shooter pShooter,
         ExtendoArm pExtendoArm,
         Controls pControls,
-        Lights pLights
+        Lights pLights,
+        LimelightManager pLimelightManager
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -48,6 +52,7 @@ public class HoldingState extends AState {
             mHoldingMode = HoldingMode.Holding;
             mShooterMode = ShooterMode.HighGoalDriveBy;
             mLights = pLights;
+            mLimelightManager = pLimelightManager;
         }
         
     protected void determineCurrentState()
@@ -74,7 +79,8 @@ public class HoldingState extends AState {
         
     }
 
-    public void logHoldingStateValues()
+    @Override
+    protected void logStateInfo()
     {
         SmartDashboard.putString("Holding State: HoldingMode", mHoldingMode.toString());
         SmartDashboard.putString("Holding State: ShooterMode", mShooterMode.toString());
@@ -84,11 +90,12 @@ public class HoldingState extends AState {
 
     private void basicContinousActions()
     {
+        SmartDashboard.putString("ShooterMode", mShooterMode.name());
         // logHoldingStateValues();
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
         mExtendoArm.retract();
         mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
-        // mShooter.logShooterInformation();
+        //mShooter.logShooterInformation();
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
         
         mLights.Run();
@@ -100,9 +107,36 @@ public class HoldingState extends AState {
         }
     }
 
+    private final long VIBRATION_PERIODS = 500;//ms
+    private void manageJoystickVibration()
+    {
+        if(HasTimeElapsedSinceEntry(VIBRATION_PERIODS * 3))
+        {
+            mControls.TurnOffVibrate();
+        }
+        else if(HasTimeElapsedSinceEntry(VIBRATION_PERIODS * 2))
+        {
+            mControls.TurnOnVibrate();
+        }
+        else if(HasTimeElapsedSinceEntry(VIBRATION_PERIODS))
+        {
+            mControls.TurnOffVibrate();
+        }
+        else //first 500 ms....
+        {
+            mControls.TurnOnVibrate();
+        }
+        
+    }
+
     @Override
     public NextStateInfo Run() {
         
+        manageJoystickVibration();
+        
+        boolean canSeeTag = LimelightInformation.isValidBotPoseResults(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+        
+        SmartDashboard.putBoolean("canSeeTag", canSeeTag);
         if (mShooterMode == ShooterMode.LowGoal)
         {
             mSwerveDrive.Run(mControls, true, Constants.LOW_GOAL_ROTATION);
@@ -119,6 +153,22 @@ public class HoldingState extends AState {
         {
             mSwerveDrive.Run(mControls); // later whatever stuff I need to do
             mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
+      
+            if (canSeeTag)
+            {
+                mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
+            }
+            else
+            {
+                mLights.SetLightingScheme(LightingScheme.HoldingButNoCameraLock);
+            }
+            
+
+
+
+
+
+
 
         } 
         else if (mShooterMode == ShooterMode.HighGoalDriveBy)
@@ -175,7 +225,22 @@ public class HoldingState extends AState {
 
         if (mControls.GetStartShootingSequence())
         {
-            return new NextStateInfo(States.Shooting, mShooterMode);
+            if (mShooterMode == ShooterMode.AutoAim)
+            { 
+                if (canSeeTag)
+                {
+                    return new NextStateInfo(States.Shooting, mShooterMode);
+                }
+                else
+                {
+                    //Set lights to red in a bit
+                    return new NextStateInfo(States.Holding, mShooterMode);
+                }
+            }
+            else
+            {
+                return new NextStateInfo(States.Shooting, mShooterMode);
+            }
         }
         else
         {

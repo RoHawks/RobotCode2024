@@ -17,43 +17,43 @@ public class JoystickControlsWithSwerve implements Controls {
         mAlternateController = pAlternateController;
     }
 
-    @Override
+
     public boolean GetForceIntakingMode() {
         return mAlternateController.getLeftBumper();
     }
 
     @Override
     public boolean GetForceEjectionMode() {
-       return mAlternateController.getRightBumper();
+       return mAlternateController.getYButton();
     }
 
     @Override
     public boolean GetPrepareForHighGoalManual() {
-        return false; //mAlternateController.getLeftBumper();
+        return mMainController.getBButton();
      
     }
 
     @Override
     public boolean GetPrepareForHighGoalDriveBy() {
-        SmartDashboard.putBoolean("High Goal Drive", mAlternateController.getXButton());
-        return false; //mAlternateController.getXButton();
+        //SmartDashboard.putBoolean("High Goal Drive", mAlternateController.getXButton());
+        return mMainController.getXButton();
     }
 
     @Override
     public boolean GetPrepareForLowGoal() {
-        return mAlternateController.getAButton();
+        return mMainController.getAButton();
     }
 
     @Override
     public boolean GetPrepareForAutoAim() {
-        // return mController.getBButton();
-        return false;
+        return mMainController.getYButton();
+
     }
 
     @Override
     public boolean GetStartShootingSequence() {
-        // return mMainController.getLeftBumper() && mMainController.getRightBumper();
-        return mAlternateController.getBButton();
+        return mMainController.getLeftBumper() && mMainController.getRightBumper();
+        // return mMainController.getBButton();
     }
 
     
@@ -99,20 +99,23 @@ public class JoystickControlsWithSwerve implements Controls {
 
     public SwerveNudgingDirection GetSwerveNudgingDirection()
     {
+        
+        int angle = mMainController.getPOV();
 
-        if(mMainController.getAButton())
+        SmartDashboard.putNumber("D Pad Angle", angle);
+        if(angle == 180|| angle == 225)
         {
             return SwerveNudgingDirection.SOUTH;
         }
-        else if(mMainController.getXButton())
+        else if(angle == 270 || angle == 315)
         {
             return SwerveNudgingDirection.EAST;
         }
-        else if(mMainController.getYButton())
+        else if(angle == 0 || angle == 45)
         {
             return SwerveNudgingDirection.NORTH;
         }
-        else if(mMainController.getBButton())
+        else if(angle == 90 || angle == 135)
         {
             return SwerveNudgingDirection.WEST;
         }
@@ -131,7 +134,7 @@ public class JoystickControlsWithSwerve implements Controls {
     public boolean GetManualControlsMode()
     {
         //SmartDashboard.putNumber("InJBC_LTR", mAlternateController.getLeftTriggerAxis());        
-        return mAlternateController.getLeftTriggerAxis() > 0.5;
+        return false;
     }
 
     public boolean GetManualAimCounterClockwise()
@@ -173,6 +176,90 @@ public class JoystickControlsWithSwerve implements Controls {
         return -1;
     }
 
+    public boolean GetAutonomousModeSelection()
+    {
+        return mAlternateController.getRightTriggerAxis() > 0.75;
+    }
 
+    public boolean GetLoggingEnabledToggle()
+    {
+        return false;
+        //return mAlternateController.getLeftY() < 0.25;
+    }   
     
+    public boolean TestOnly_AnglerUp()
+    {
+        return mAlternateController.getRightBumper();
+    }
+
+    public boolean TestOnly_AnglerDown()
+    {
+        return mAlternateController.getPOV() == 90;
+    }
+
+    public boolean TestOnly_TopConveyorOn()
+    {
+        return mAlternateController.getYButton();
+    }
+
+    public boolean TestOnly_BottomConveyorOn()
+    {
+        return mAlternateController.getXButton();
+    }
+
+    public boolean TestOnly_IntakeRollerOn()
+    {
+        return mAlternateController.getPOV() == 0;
+    }
+
+    public boolean TestOnly_TopShooterOn()
+    {
+        return mAlternateController.getPOV() == 180;
+    }
+
+    public boolean TestOnly_BottomShooterOn()
+    {
+        return mAlternateController.getLeftBumper();
+    }
+
+    public boolean TestOnly_WestArmUp()
+    {
+        return mAlternateController.getAButton();
+    }
+
+    public boolean TestOnly_WestArmDown()
+    {
+        return mAlternateController.getPOV() == 270;
+    }
+
+    public boolean TestOnly_EastArmUp()
+    {
+        return mAlternateController.getBButton();
+    }
+
+    public boolean TestOnly_EastArmDown()
+    {
+        return mAlternateController.getLeftY() > 0.75;
+    }
+
+    public boolean TestOnly_ExtendoArmOut()
+    {
+        return mAlternateController.getRightStickButton();
+    }
+
+    public boolean TestOnly_ExtendoArmIn()
+    {
+        return mAlternateController.getLeftStickButton();
+    }
+
+    public boolean TestOnly_TrapMechanismOn()
+    {
+        return mAlternateController.getStartButton();
+    }
+
+    public boolean TestOnly_AllowSwerveDuringTestMode()
+    {
+        return mAlternateController.getBackButton();
+    }
+
 }

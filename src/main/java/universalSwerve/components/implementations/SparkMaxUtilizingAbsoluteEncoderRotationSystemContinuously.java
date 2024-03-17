@@ -69,7 +69,7 @@ public class SparkMaxUtilizingAbsoluteEncoderRotationSystemContinuously implemen
     @Override
     public void SetAngle(double pTargetAngle) {
         double encoderReference = ConvertOurAngleToEncoderUnit(pTargetAngle);
-        SmartDashboard.putNumber("encoderReference", encoderReference);
+        //SmartDashboard.putNumber("encoderReference", encoderReference);
         mSparkMax.getPIDController().setReference(encoderReference, CANSparkMax.ControlType.kPosition);
         
         

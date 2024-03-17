@@ -28,7 +28,7 @@ public class RoutineFactory
         ArrayList<Pair<Double,Long>> listOfPairs = new ArrayList<>();
         listOfPairs.add(new Pair<Double,Long>(27.0, 1250l));
         listOfPairs.add(new Pair<Double,Long>(30.0, 4000l));
-        listOfPairs.add(new Pair<Double,Long>(18.0, 100000l));
+        listOfPairs.add(new Pair<Double,Long>(22.0, 100000l));
     
 
         returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("4CloseRingAuto.2", listOfPairs));
@@ -63,4 +63,26 @@ public class RoutineFactory
     }
     
 
+    public AutonomousRoutine ShootCloseToStageCloseToSourceSide()
+    {
+         double initialAngle = 36;
+        AutonomousRoutine returnValue = new AutonomousRoutine("ShootCloseToStageCloseToSourceSide");
+        //returnValue.AddStep(mStepFactory.CreateGameStartStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("ShootCloseToStageCloseToSourceSide.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> eightTeenDegrees = new ArrayList<>();
+        eightTeenDegrees.add(new Pair<Double,Long>(18.0, 100000l));
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("ShootCloseToStageCloseToSourceSide.2", eightTeenDegrees));
+        
+        ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>();
+        thirtySixDegrees.add(new Pair<Double,Long>(36.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
 }

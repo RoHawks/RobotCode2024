@@ -129,10 +129,10 @@ public class SwerveFactory
 
         //Turn Spak Maxes        
         TurnSparkMaxCreator turnSparkMaxCreator = new TurnSparkMaxCreator();        
-        CANSparkMax neTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(neTurnChannel, 0.3444+0.500);
-        CANSparkMax seTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(seTurnChannel, 0.2546-0.250);
-        CANSparkMax swTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(swTurnChannel, 0.661);
-        CANSparkMax nwTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(nwTurnChannel, 0.9434 -0.750);        
+        CANSparkMax neTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(neTurnChannel, 0.3454+0.500);
+        CANSparkMax seTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(seTurnChannel, 0.2536-0.250);
+        CANSparkMax swTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(swTurnChannel, 0.671);
+        CANSparkMax nwTurnSparkMax = turnSparkMaxCreator.CreateTurnSparkMax(nwTurnChannel, 0.9414 -0.750);        
         CANSparkMax[] turnSparkMaxes = new CANSparkMax[] { neTurnSparkMax,seTurnSparkMax, swTurnSparkMax, nwTurnSparkMax};
 
         Wheel[] wheels = new Wheel[4];

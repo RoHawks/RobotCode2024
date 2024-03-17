@@ -53,6 +53,7 @@ public class IntakingState extends AState {
 
     private void basicContinousActions()
     {
+        SmartDashboard.putString("ShooterMode", mShooterMode.name());
         mSwerveDrive.Run(mControls);
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0,0);
@@ -73,7 +74,7 @@ public class IntakingState extends AState {
         basicContinousActions();
 
         
-        if (GetTimeSinceEntry() < 400)
+        if (GetTimeSinceEntry() < 1000)
         {
             mIntake.setToHoldingSpeed();
         }
@@ -83,7 +84,7 @@ public class IntakingState extends AState {
         } 
         
         
-        if (GetTimeSinceEntry() < 1000)
+        if (GetTimeSinceEntry() < 500)
         {
             mShooter.setSpeed(0, 0);
             
@@ -126,6 +127,9 @@ public class IntakingState extends AState {
         {
             mShooterMode = (ShooterMode) pEntryParameter;
         }
+
+        mControls.TurnOffVibrate();
+        
         
     }
 

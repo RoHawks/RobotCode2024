@@ -55,6 +55,24 @@ public class Intake {
         returnValue.burnFlash();
         return returnValue;
     }
+
+      private CANSparkMax CreateTrapIntake(int pDeviceID, boolean pIsInverted)
+    {
+        CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushed);
+        returnValue.setSmartCurrentLimit(39);      
+        returnValue.setIdleMode(IdleMode.kBrake);
+        returnValue.setOpenLoopRampRate(0.0);
+        returnValue.setInverted(pIsInverted);
+        returnValue.burnFlash();
+        returnValue.enableSoftLimit(SoftLimitDirection.kForward, false);
+        returnValue.enableSoftLimit(SoftLimitDirection.kReverse, false);
+        returnValue.getForwardLimitSwitch(Type.kNormallyOpen).enableLimitSwitch(false);
+        returnValue.getReverseLimitSwitch(Type.kNormallyOpen).enableLimitSwitch(false);
+        
+        returnValue.burnFlash();
+        return returnValue;
+    }
+
     
     private CANSparkMax mTrapIntake;
     public void TestSetTrapIntakeSpeed(double pSpeed)
@@ -67,29 +85,23 @@ public class Intake {
         mConveyorBeltTop = CreateConveyorBeltMotor(13, false);
         mConveyorBeltBottom =  CreateConveyorBeltMotor(6, false);
         mIntakeRoller =  CreateFrontIntakeRollerMotor(15, true); ;
-        mTrapIntake = CreateFrontIntakeRollerMotor(8, true);
+        mTrapIntake = CreateTrapIntake(8, true);
         mBreakBeam = mTrapIntake.getAnalog(Mode.kRelative);
         // Set to max value at the start so if the position isn't recorded then it will never backup
         mPositionAtBreakBeam = Double.MAX_VALUE;
-        
-        
-       
-        
-       
-        
-
+                
     }
 
     public boolean getBreakBeamStatus()
     {
-        SmartDashboard.putNumber("Break Beam Voltage", mBreakBeam.getVoltage());
+        //SmartDashboard.putNumber("Break Beam Voltage", mBreakBeam.getVoltage());
         return mBreakBeam.getVoltage() < 2.0;
     }
 
     public void recordPositionAtBreakBeam()
     {
         mPositionAtBreakBeam = mConveyorBeltTop.getPosition().getValueAsDouble();
-        SmartDashboard.putNumber("Position At Breakbeam", mPositionAtBreakBeam);
+        //SmartDashboard.putNumber("Position At Breakbeam", mPositionAtBreakBeam);
     }
 
     public void setSpeeds(double pBeltTopSpeed, double pBeltBottomSpeed, double pIntakeRollerSpeed)
@@ -162,6 +174,24 @@ public class Intake {
         } 
     }
 
+    public boolean hasConveyorFinishedBackingUpExtra()
+    {
+        double motorPosition = mConveyorBeltTop.getPosition().getValueAsDouble();
+        double positionChangeFromTheBreakBeam = motorPosition - mPositionAtBreakBeam;
+        
+        SmartDashboard.putNumber("Conveyors Position Change From BreakBeam", positionChangeFromTheBreakBeam);
+    
+        
+        if (positionChangeFromTheBreakBeam < Constants.ROTATIONS_FOR_CONVEYORS_TO_BACK_UP_TO_EXTRA)
+        { 
+            return true;
+        }
+        else
+        {
+            return false;
+        } 
+    }
+
     public void setConveyorToBackupSpeed() 
     { 
         setSpeeds(Constants.INTAKE_CONVEYORS_BACKUP_SPEED, 
@@ -181,6 +211,26 @@ public class Intake {
     {
         return Arrays.asList(mConveyorBeltBottom, mConveyorBeltTop);
     }
+
+    private void logIntakeTalon(String pPrefix, TalonFX pMotor)
+    {
+        SmartDashboard.putNumber(pPrefix + "-Voltage", pMotor.getMotorVoltage().getValueAsDouble());
+        SmartDashboard.putNumber(pPrefix + "-Current", pMotor.getSupplyCurrent().getValueAsDouble());
+    }
+
+    private void logIntakeRoller()
+    {
+        SmartDashboard.putNumber("IntakeRoller-Output", mIntakeRoller.getAppliedOutput());
+        SmartDashboard.putNumber("IntakeRoller-Current", mIntakeRoller.getOutputCurrent());
+    }
+
+    public void logIntake()
+    {
+        logIntakeTalon("TopConveyor", mConveyorBeltTop);
+        logIntakeTalon("BottomConveyor", mConveyorBeltBottom);
+        logIntakeRoller();
+    }
+
 }
 /* 
 
