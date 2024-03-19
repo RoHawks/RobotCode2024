@@ -16,7 +16,7 @@ import robosystems.Intake;
 import robosystems.Lights;
 import robosystems.Shooter;
 import robotcode.autonomous.AutonomousRoutine;
-import states.ApproachingClimberControls;
+
 import states.StateMachine;
 import states.JoystickControlsWithSwerve;
 import states.ShooterMode;
@@ -131,8 +131,7 @@ public class Robot extends TimedRobot
     
     mStateMachine = new StateMachine(mControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, mClimberArms, mLights, mLimelightManager);    
     
-    ApproachingClimberControls.setInstanceInformation(mMainController, mAlternateController);
-
+    
     initializeAutonomousRoutines();
 
    
@@ -151,12 +150,13 @@ public class Robot extends TimedRobot
   }
 
 
-  private boolean mLoggingEnabled = true;
+  private boolean mLoggingEnabled = false;
   private boolean mLastLoggingEnabledTogglePressed = false;
 
   private void checkLoggingEnabledToggle()
   {
     boolean changeButtonIsPressed = mControls.GetLoggingEnabledToggle();
+    
     if(changeButtonIsPressed && !mLastLoggingEnabledTogglePressed)
     {
       mLoggingEnabled = !mLoggingEnabled;
@@ -167,13 +167,17 @@ public class Robot extends TimedRobot
 
   private void logMainMechanisms()
   {
+    SmartDashboard.putBoolean("Forward Limit", mShooter.testGetForwardAnglerLimitSwitchTriggered());
+    SmartDashboard.putBoolean("Reverse Limit", mShooter.testGetReverseAnglerLimitSwitchTriggered());
+
+
     if(mLoggingEnabled)
     {
-      
+      //SmartDashboard.putNumber("Logging At", System.currentTimeMillis());
       //mLimelightManager.logLimelightInfo();
       
       // mShooter.logShooterInformation();
-      // mStateMachine.log();
+      mStateMachine.log();
       //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
@@ -203,6 +207,7 @@ public class Robot extends TimedRobot
   @Override
   public void robotPeriodic()
   {    
+  
     mLimelightManager.calculateCameraPoseTargetSpace();
     mLimelightManager.calculateBotpose();    
 
@@ -227,7 +232,7 @@ public class Robot extends TimedRobot
   public void autonomousInit() 
   {
     AllianceInfo.GetInstance().LoadAllianceFromFMS();
-    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Blue);
+    //AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
 
     mAutonomousRoutine = mAutonomousRoutines.get(mAutoModeSelection).GetRoutine();
     mAutonomousStartTime = System.currentTimeMillis();
@@ -254,13 +259,13 @@ public class Robot extends TimedRobot
   public void teleopInit() 
   {
     AllianceInfo.GetInstance().LoadAllianceFromFMS();
-    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Blue);
+    //AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
 
     mShooter.SetAnglerLimitSwitchesEnabledOrDisabled(true);
   }
   
 
-  public void zeroAnglerEncoderAndGyro()
+  public void zeroAnglerEncoderAndGyro_IfLimitSwitchesAreBroken()
   {
     //until we fix limit switch....
 
@@ -274,7 +279,7 @@ public class Robot extends TimedRobot
 
   }
 
-  public void zeroAnglerEncoderAndGyro_Real()
+  public void zeroAnglerEncoderAndGyro()
   {
     //SmartDashboard.putBoolean("Limit Reached", mShooter.mAnglerHardReverseLimitSwitchisPressed());        
     if (!mAnglerMotorAndGyroZeroingHasOccurred)
@@ -294,6 +299,69 @@ public class Robot extends TimedRobot
     }   
   }
 
+  public void testAnglerLimits(){
+
+  }
+
+  private void shootySpinnyTrapTest(){
+    
+    double angleChange = (mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis()) / 10.0;
+    mTestOnlyAnlgerTracker += angleChange;
+    mShooter.setAngle(mTestOnlyAnlgerTracker);
+
+    if (mMainController.getYButton())
+    {
+      mClimberArms.extend();
+    }
+    else if (mMainController.getXButton())
+    {
+      mClimberArms.retract();
+    }
+    
+
+    
+    // int pov = mMainController.getPOV(); 
+    
+    // if(Math.abs(pov - 0.0) < 0.1)
+    // {
+    //   mExtendoTargetPosition -= 1.0;
+    // } 
+    // else if(Math.abs(pov - 180.0) < 0.1)
+    // {
+    //   mExtendoTargetPosition += 1.0;
+    // }
+
+    // mExtendoArm.goToPosition(mExtendoTargetPosition);
+
+
+    
+    double topWheels = mMainController.getRightY(); 
+    if( Math.abs(topWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedTop+= -1.0 * topWheels / 100;
+    }
+    
+    double bottomWheels = mMainController.getLeftY();
+    if( Math.abs(bottomWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedBottom += -1.0 * bottomWheels / 100;
+    }
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedBottom", mTestOnlyShooterSpeedBottom);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom); 
+
+    
+    
+    if(mMainController.getStartButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+  }
 
   
   private double recordedTurningAngle = 0;
@@ -421,11 +489,7 @@ public class Robot extends TimedRobot
 
   private void testExtendoArmPID()
   {
-    if(mMainController.getAButton()) 
-    {
-      mExtendoArm.trapExtension();
-    }
-    else if(mMainController.getBButton()) 
+    if(mMainController.getBButton()) 
     {
       mExtendoArm.lowGoalExtension();
     }
@@ -457,29 +521,18 @@ public class Robot extends TimedRobot
     double armSpeed = 0.5;
     if (mMainController.getYButton())
     {
-      mClimberArms.TEST_ONLY_SetRightArmSpeed(armSpeed);      
+      mClimberArms.extend();
     }
     else if (mMainController.getXButton())
     {
-      mClimberArms.TEST_ONLY_SetRightArmSpeed(-1.0 * armSpeed);      
+      mClimberArms.retract();
     }
     else
     {
       mClimberArms.TEST_ONLY_SetRightArmSpeed(0);      
+      mClimberArms.TEST_ONLY_SetLeftArmSpeed(0);      
     }
 
-    if (mMainController.getBButton())
-    {
-      mClimberArms.TEST_ONLY_SetLeftArmSpeed(-1.0 * armSpeed);            
-    }
-    else if (mMainController.getAButton())
-    {
-      mClimberArms.TEST_ONLY_SetLeftArmSpeed(armSpeed);      
-    }
-    else
-    {
-      mClimberArms.TEST_ONLY_SetLeftArmSpeed(0);   
-    }
 
     
     int pov = mMainController.getPOV(); 
@@ -509,14 +562,14 @@ public class Robot extends TimedRobot
        mIntake.TestSetTrapIntakeSpeed(0);
     }
 
-    /* 
+     
     if( Math.abs(mMainController.getLeftY()) > 0.07)
     {
       mTestOnlyShooterSpeed += -1.0 * mMainController.getLeftY() / 100;
     }
     mShooter.setSpeed(mTestOnlyShooterSpeed, mTestOnlyShooterSpeed * 0.75);
-    */
-    mShooter.setSpeed(0, 0);
+    
+    
     if(mMainController.getRightStickButton())
     {
       mIntake.setToLaunchingNoteIntoTheShooterSpeed();
@@ -554,31 +607,82 @@ public class Robot extends TimedRobot
       );
 
       mClimberArms.TEST_ONLY_SetLeftArmSpeed(Ternary(mControls.TestOnly_WestArmUp(), 0.25, mControls.TestOnly_WestArmDown(), -0.25, 0));
-      mClimberArms.TEST_ONLY_SetRightArmSpeed(Ternary(mControls.TestOnly_EastArmUp(), 0.25, mControls.TestOnly_EastArmDown(), -0.25, 0));
+      mClimberArms.TEST_ONLY_SetRightArmSpeed(Ternary(mControls.TestOnly_EastArmUp(), -0.25, mControls.TestOnly_EastArmDown(), 0.25, 0));
 
-      mExtendoArm.testOnlyRunAtSpeed(Ternary(mControls.TestOnly_ExtendoArmOut(), 0.25, mControls.TestOnly_ExtendoArmIn(), -0.25, 0));
+      mExtendoArm.testOnlyRunAtSpeed(Ternary(mControls.TestOnly_ExtendoArmOut(), -0.25, mControls.TestOnly_ExtendoArmIn(), 0.25, 0));
 
       mIntake.TestSetTrapIntakeSpeed(mControls.TestOnly_TrapMechanismOn() ? 0.25 : 0 );
 
       if(mControls.TestOnly_AllowSwerveDuringTestMode())
-      {
+      {        
         mSwerveDrive.Run(mControls);
       }
       else
-      {
+      {        
         mSwerveDrive.StopEverything();
       }
   }
 
+  private void TestClimberPID()
+  {
+    if(mMainController.getXButton())
+    {
+      mClimberArms.extend();
+    }
+    else if(mMainController.getYButton())
+    {
+      mClimberArms.retract();
+    }
+    else
+    {
+      mClimberArms.TEST_ONLY_SetLeftArmSpeed(0);
+      mClimberArms.TEST_ONLY_SetRightArmSpeed(0);
+    }
+  }
 
   public void testPeriodic()
   {    
-    testTrapMechanism();
+    //testTrapMechanism();
     //SwerveDrive.Run(mControls);
     //testExtendoArmPID();
     //TestJustSwerve();
+    //TestClimberPID();
+    // testSpinnyTrapShot();
+    //shootySpinnyTrapTest();
+    RealTestMode();
+    
+  }
 
-    //RealTestMode();
+  private double mTestOnlyShooterSpeedTop = 0;
+  private double mTestOnlyShooterSpeedBottom = 0;
+  public void testSpinnyTrapShot()
+  {
+    
+    double topWheels = mMainController.getRightY(); 
+    if( topWheels > 0.07)
+    {
+      mTestOnlyShooterSpeedTop+= -1.0 * topWheels / 100;
+    }
+    
+    double bottomWheels = mMainController.getLeftY();
+    if( Math.abs(bottomWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedBottom += -1.0 * bottomWheels / 100;
+    }
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedBottom);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom);
+
+    if(mMainController.getStartButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+
 
   }
 

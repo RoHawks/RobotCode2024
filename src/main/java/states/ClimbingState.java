@@ -38,14 +38,26 @@ public class ClimbingState extends AState
     }
 
     public NextStateInfo Run(){
-        mSwerveDrive.Run(ApproachingClimberControls.Instance);
+        mSwerveDrive.Run(mControls);
         boolean mFinishedRetracting = mClimberArms.retract();
-        mShooter.goToTrapShootAngle();
+        mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0, 0);
         mIntake.setToHoldingSpeed();
 
+
+        if (mControls.GetForceIntakingMode())
+        {
+            return new NextStateInfo(States.Intaking, mShooterMode);
+        }
+
+        if (mControls.GetPrepareToClimb())
+        {
+            return new NextStateInfo(States.ClimbingPreparation, mEntryParameter);
+        }
+
         if(mFinishedRetracting){
-            return new NextStateInfo(States.TrapShooting, mShooterMode);
+            // Do nothing!
+            return new NextStateInfo(States.Climbing, mShooterMode); 
         }else{
             return new NextStateInfo(States.Climbing, mShooterMode);
         }

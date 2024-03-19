@@ -381,6 +381,16 @@ public class Shooter{
         }
     }
 
+    public boolean testGetForwardAnglerLimitSwitchTriggered()
+    {
+        return mAnglerMotor.getForwardLimitSwitch(Type.kNormallyOpen).isPressed();
+    }
+
+    public boolean testGetReverseAnglerLimitSwitchTriggered()
+    {
+        return mAnglerMotor.getReverseLimitSwitch(Type.kNormallyOpen).isPressed();
+    }
+
     public void resetForHoldingState()
     {
         mHasCorrectSpeed = false;

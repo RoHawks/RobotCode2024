@@ -29,8 +29,7 @@ public interface Controls extends ISwerveControls
 
     public universalSwerve.utilities.SwerveNudgingDirection GetSwerveNudgingDirection();
 
-    public boolean GetManualAimCounterClockwise();
-    public boolean GetManualAimClockwise();
+
 
     public boolean GetPrepareToClimb();
     public boolean GetRetractClimb();

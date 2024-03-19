@@ -9,6 +9,7 @@ import frc.robot.LimelightInformation;
 import frc.robot.LimelightManager;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
+import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
@@ -24,6 +25,7 @@ public class HoldingState extends AState {
     private Controls mControls;
     private Lights mLights;
     private LimelightManager mLimelightManager;
+    private ClimberArms mClimberArms;
 
     private HoldingMode mHoldingMode; // ARGH everything else is ShooterMode IntakeMode this naming convention DOESNT WORK for HoldingMode 
     private ShooterMode mShooterMode;
@@ -41,7 +43,8 @@ public class HoldingState extends AState {
         ExtendoArm pExtendoArm,
         Controls pControls,
         Lights pLights,
-        LimelightManager pLimelightManager
+        LimelightManager pLimelightManager,
+        ClimberArms pClimberArms
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -53,6 +56,7 @@ public class HoldingState extends AState {
             mShooterMode = ShooterMode.HighGoalDriveBy;
             mLights = pLights;
             mLimelightManager = pLimelightManager;
+            mClimberArms = pClimberArms;
         }
         
     protected void determineCurrentState()
@@ -94,6 +98,7 @@ public class HoldingState extends AState {
         // logHoldingStateValues();
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
         mExtendoArm.retract();
+        mClimberArms.retract();
         mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
         //mShooter.logShooterInformation();
         mShooter.setAngleBasedOnShooterMode(mShooterMode);

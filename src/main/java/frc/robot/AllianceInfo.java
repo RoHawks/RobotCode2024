@@ -37,6 +37,11 @@ public class AllianceInfo
         }
     }
 
+    public double GetLowGoalRotation()
+    {
+        return mAlliance != null && mAlliance == Alliance.Red ? 270.0 : 90.0 ;
+    }
+
     public boolean ShouldFlipAutos()
     {
         return mAlliance != null && mAlliance == Alliance.Red;

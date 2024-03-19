@@ -20,6 +20,7 @@ public class EjectingState extends AState
     private ExtendoArm mExtendoArm;
     private Controls mControls;
     private Lights mLights;
+    private ClimberArms mClimberArms;
 
     private ShooterMode mShooterMode;
 
@@ -29,7 +30,8 @@ public class EjectingState extends AState
         Shooter pShooter,
         ExtendoArm pExtendoArm,
         Controls pControls,
-        Lights pLights
+        Lights pLights,
+        ClimberArms pClimberArms
         )
     {
         mSwerveDrive = pSwerveDrive;
@@ -38,6 +40,7 @@ public class EjectingState extends AState
         mExtendoArm = pExtendoArm;
         mControls = pControls;   
         mLights = pLights;
+        mClimberArms = pClimberArms;
     }
 
 
@@ -56,6 +59,7 @@ public class EjectingState extends AState
     private void basicContinousActions()
     {
         mSwerveDrive.Run(mControls);
+        mClimberArms.retract();
         mExtendoArm.retract();
         mShooter.setAngleToIntakingAngle();
         mLights.SetLightingScheme(LightingScheme.Ejecting);

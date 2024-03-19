@@ -32,7 +32,6 @@ public class ClimbingPreparationState extends AState
     public void EnterState(Object pEntryParameter)
     {
         super.EnterState(pEntryParameter);
-        ApproachingClimberControls.Instance.setTimeSinceEnteredClimbingState(System.currentTimeMillis());
         mShooterMode = (ShooterMode) pEntryParameter;
         mControls.TurnOffVibrate();
     }
@@ -43,8 +42,8 @@ public class ClimbingPreparationState extends AState
     }
 
     public NextStateInfo Run(){
-        mSwerveDrive.Run(ApproachingClimberControls.Instance);
-        mShooter.goToTrapShootAngle();
+        mSwerveDrive.Run(mControls);
+        mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0, 0);
         mIntake.setToHoldingSpeed();
         
@@ -52,11 +51,18 @@ public class ClimbingPreparationState extends AState
 
         boolean mFinishedExtending = mClimberArms.extend();
         
-        if(mFinishedExtending && mControls.GetRetractClimb()){
+        
+        if (mControls.GetForceIntakingMode())
+        {
+            return new NextStateInfo(States.Intaking, mShooterMode);
+        }
+        
+        if(mControls.GetRetractClimb()){ //remove mFinishedExtending && ... we can retratect at any time.
             return new NextStateInfo(States.Climbing, mShooterMode);
         }else{
             return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
         }
+
     }
 
     public States GetState(){

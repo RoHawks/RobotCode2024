@@ -155,7 +155,7 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
 
     public void StopEverything()
     {
-        SmartDashboard.putNumber("StopEcverythingCalledAt", System.currentTimeMillis());
+        //SmartDashboard.putNumber("StopEcverythingCalledAt", System.currentTimeMillis());
         mFalcon.stopMotor();
     }
   

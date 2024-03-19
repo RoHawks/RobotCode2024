@@ -198,6 +198,7 @@ public class LimelightManager
 
   public void logLimelightInfo()
   {
+        /*
       double[] west = getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.WEST_CAMERA);
       double[] east = getCameraPoseTargetSpaceForSpecificCamera(LimelightManager.EAST_CAMERA);
 
@@ -205,7 +206,7 @@ public class LimelightManager
       {
         SmartDashboard.putNumber("LimeLightWestMinusEast", west[0] - east[0] );
       }
-     
+      */
       double[] east_botpose = getBotposeForSpecificCamera(LimelightManager.EAST_CAMERA);
       double[] west_botpose = getBotposeForSpecificCamera(LimelightManager.WEST_CAMERA);
 
@@ -214,9 +215,9 @@ public class LimelightManager
         SmartDashboard.putNumber("BotposetWestMinusEast", west_botpose[1] - east_botpose[1] );
       }
 
-    logLimelightInfo("East-", east);
-    logLimelightInfo("West-", west);
-    logLimelightInfo("Combined-", getCameraPoseTargetSpace());
+    //logLimelightInfo("East-", east);
+    //logLimelightInfo("West-", west);
+    //logLimelightInfo("Combined-", getCameraPoseTargetSpace());
     logLimelightInfo("East-Botpose", east_botpose);
     logLimelightInfo("West-Botpose", west_botpose);
    

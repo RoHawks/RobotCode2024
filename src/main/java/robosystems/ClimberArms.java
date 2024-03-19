@@ -4,6 +4,7 @@ package robosystems;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -35,23 +36,34 @@ public class ClimberArms
       
       configureTalon(mLeftDrumMotor);
       configureTalon(mRightDrumMotor);
+
+      SoftwareLimitSwitchConfigs softLimitConfigsLeft = new SoftwareLimitSwitchConfigs();
+      softLimitConfigsLeft.ForwardSoftLimitEnable = true;
+      softLimitConfigsLeft.ForwardSoftLimitThreshold = 315;      
+      mLeftDrumMotor.getConfigurator().apply(softLimitConfigsLeft);
+
+      SoftwareLimitSwitchConfigs softLimitConfigsRight = new SoftwareLimitSwitchConfigs();
+      softLimitConfigsRight.ReverseSoftLimitEnable = true;
+      softLimitConfigsRight.ReverseSoftLimitThreshold = -315;
+      mRightDrumMotor.getConfigurator().apply(softLimitConfigsRight);
+
   }
 
   // Configure Drum Motors
   public static void configureTalon(TalonFX pDrumMotor) {
       ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
-      clrc.DutyCycleClosedLoopRampPeriod = 0.5;
-      clrc.VoltageClosedLoopRampPeriod = 0.5;
+      clrc.DutyCycleClosedLoopRampPeriod = 0.1;
+      clrc.VoltageClosedLoopRampPeriod = 0.1;
 
       
 
       CurrentLimitsConfigs clc = new CurrentLimitsConfigs();
-      clc.SupplyCurrentLimit = 20;
-      clc.SupplyCurrentThreshold = 60;
+      clc.SupplyCurrentLimit = 39;
+      clc.SupplyCurrentThreshold = 0.1;
       clc.SupplyCurrentLimitEnable = true;
 
       TalonFXConfiguration motorConfig = new TalonFXConfiguration();            
-      motorConfig.Slot0.kP = 0.1;
+      motorConfig.Slot0.kP = 0.8;
       motorConfig.Slot0.kI = 0;
       motorConfig.Slot0.kD = 0;
       motorConfig.Slot0.kV = 0;
@@ -65,6 +77,12 @@ public class ClimberArms
       pDrumMotor.getConfigurator().apply(clc);
       pDrumMotor.getConfigurator().apply(motorConfig);
       pDrumMotor.getConfigurator().apply(motorOutputConfig);
+
+
+ 
+
+      
+
       
       
   }

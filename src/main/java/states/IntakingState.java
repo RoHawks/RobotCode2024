@@ -7,6 +7,7 @@ import frc.robot.Constants;
 import frc.robot.Functionality;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
+import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
@@ -21,7 +22,7 @@ public class IntakingState extends AState {
     private ExtendoArm mExtendoArm;
     private Controls mControls;
     private Lights mLights;
-
+    private ClimberArms mClimberArms;
 
     private ShooterMode mShooterMode;
 
@@ -32,7 +33,8 @@ public class IntakingState extends AState {
         Shooter pShooter,
         ExtendoArm pExtendoArm,
         Controls pControls,
-        Lights pLights
+        Lights pLights,
+        ClimberArms pClimberArms
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -42,6 +44,7 @@ public class IntakingState extends AState {
             mControls = pControls;   
             mShooterMode = ShooterMode.HighGoalDriveBy;
             mLights = pLights;
+            mClimberArms = pClimberArms;
         }
     
     
@@ -54,6 +57,7 @@ public class IntakingState extends AState {
     private void basicContinousActions()
     {
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
+        mClimberArms.retract();
         mSwerveDrive.Run(mControls);
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0,0);

@@ -24,7 +24,7 @@ public class JoystickControlsWithSwerve implements Controls {
 
     @Override
     public boolean GetForceEjectionMode() {
-       return mAlternateController.getYButton();
+       return mAlternateController.getPOV() == 180;
     }
 
     @Override
@@ -58,12 +58,12 @@ public class JoystickControlsWithSwerve implements Controls {
 
     
     public boolean GetPrepareToClimb() {
-        return mAlternateController.getYButton();
+        return mAlternateController.getRightBumper();
     }
 
     public boolean GetRetractClimb()
     {
-        return mAlternateController.getXButton();
+        return mAlternateController.getPOV() == 90;
     }
 
 
@@ -137,15 +137,7 @@ public class JoystickControlsWithSwerve implements Controls {
         return false;
     }
 
-    public boolean GetManualAimCounterClockwise()
-    {
-        return mAlternateController.getRightBumper();
-    }
-    public boolean GetManualAimClockwise()
-    {
-        return mAlternateController.getStartButton();
-        
-    }
+
 
     public boolean GetReleaseGamePiece()
     {
@@ -178,13 +170,12 @@ public class JoystickControlsWithSwerve implements Controls {
 
     public boolean GetAutonomousModeSelection()
     {
-        return mAlternateController.getRightTriggerAxis() > 0.75;
+        return mAlternateController.isConnected() && mAlternateController.getRightTriggerAxis() > 0.75;
     }
 
     public boolean GetLoggingEnabledToggle()
-    {
-        return false;
-        //return mAlternateController.getLeftY() < 0.25;
+    {         
+        return mAlternateController.isConnected() && mAlternateController.getLeftY() < -0.5;
     }   
     
     public boolean TestOnly_AnglerUp()
@@ -239,7 +230,7 @@ public class JoystickControlsWithSwerve implements Controls {
 
     public boolean TestOnly_EastArmDown()
     {
-        return mAlternateController.getLeftY() > 0.75;
+        return mAlternateController.isConnected() && mAlternateController.getLeftY() > 0.75;
     }
 
     public boolean TestOnly_ExtendoArmOut()
@@ -253,13 +244,13 @@ public class JoystickControlsWithSwerve implements Controls {
     }
 
     public boolean TestOnly_TrapMechanismOn()
-    {
-        return mAlternateController.getStartButton();
+    {        
+        return mAlternateController.getBackButton();
     }
 
     public boolean TestOnly_AllowSwerveDuringTestMode()
-    {
-        return mAlternateController.getBackButton();
+    {        
+        return mMainController.isConnected() && mAlternateController.isConnected() && mAlternateController.getStartButton();
     }
 
 }

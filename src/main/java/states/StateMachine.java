@@ -21,13 +21,13 @@ public class StateMachine
     {     
         mStates = new HashMap<States, AState>();
 
-        IntakingState intakingState = new IntakingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
+        IntakingState intakingState = new IntakingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pClimberArms);
         mStates.put(intakingState.GetState(), intakingState);
 
-        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager);
+        HoldingState holdingState = new HoldingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager, pClimberArms);
         mStates.put(holdingState.GetState(), holdingState);
 
-        ShootingState shootingState = new ShootingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager);
+        ShootingState shootingState = new ShootingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pLimelightManager, pClimberArms);
         mStates.put(shootingState.GetState(), shootingState);
 
         ClimbingState climbingState = new ClimbingState(pSwerveDrive, pClimberArms, pShooter, pIntake, pControls);
@@ -36,10 +36,7 @@ public class StateMachine
         ClimbingPreparationState climbingPreparationState = new ClimbingPreparationState(pSwerveDrive, pClimberArms, pShooter, pControls, pIntake);
         mStates.put(climbingPreparationState.GetState(), climbingPreparationState);
 
-        TrapShootingState trapShootingState = new TrapShootingState(pControls);
-        mStates.put(trapShootingState.GetState(), trapShootingState);
-
-        EjectingState ejectingState = new EjectingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights);
+        EjectingState ejectingState = new EjectingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pClimberArms);
         mStates.put(ejectingState.GetState(), ejectingState);
         
         mCurrentState = intakingState.GetState();

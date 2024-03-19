@@ -9,6 +9,7 @@ import frc.robot.LimelightInformation;
 import frc.robot.LimelightManager;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
+import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
@@ -27,6 +28,7 @@ public class ShootingState extends AState {
     private ShooterMode mShooterMode;
     private double mTimeStartedToShoot;
     private LimelightManager mLimelightManager;
+    private ClimberArms mClimberArms;
 
     private boolean mHasShot;
 
@@ -37,7 +39,8 @@ public class ShootingState extends AState {
         ExtendoArm pExtendoArm,
         Controls pControls,
         Lights pLights,
-        LimelightManager pLimelightManager
+        LimelightManager pLimelightManager,
+        ClimberArms pClimberArms
         )
         {
             mSwerveDrive = pSwerveDrive;
@@ -50,6 +53,7 @@ public class ShootingState extends AState {
             mHasShot = false;
             mLights = pLights;
             mLimelightManager = pLimelightManager;
+            mClimberArms = pClimberArms;
         }
        
         
@@ -93,6 +97,7 @@ public class ShootingState extends AState {
 
     private void basicContinousActions(ChassisSpeeds pChassisSpeeds)
     {
+        mClimberArms.retract();
         // logShootingStateInformation();
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
 
@@ -133,6 +138,14 @@ public class ShootingState extends AState {
         basicContinousActions(chassisSpeeds);
         if ((initialShooterMode == ShooterMode.HighGoalDriveBy && mShooterMode == ShooterMode.HighGoalManual)
             || inAutoModeAndCouldntSeeTheTagAtTheStart)
+        {
+            return new NextStateInfo(States.Holding, mShooterMode);
+        }
+
+        //ATS, 3/19:  adding the code below
+        //If you switched to low goal modew while it was in drive-by, it would just shoot right away.
+
+        if(initialShooterMode != ShooterMode.LowGoal && mShooterMode == ShooterMode.LowGoal)
         {
             return new NextStateInfo(States.Holding, mShooterMode);
         }
@@ -298,7 +311,29 @@ public class ShootingState extends AState {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
-        if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > 500)
+        double timeDelay;
+        if (mShooterMode == ShooterMode.LowGoal)
+        {
+            timeDelay = 2500;
+        }
+        else
+        {
+            timeDelay = 500;
+        }
+
+        if (mHasShot && mShooterMode == ShooterMode.LowGoal)
+        {
+            if (System.currentTimeMillis() - mTimeStartedToShoot > 500)
+            {
+                mExtendoArm.retract();
+            }
+        }
+        else
+        {
+            setExtendoArmPosition();
+        }
+        
+        if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > timeDelay)
         {
             return new NextStateInfo(States.Intaking, mShooterMode);
         }

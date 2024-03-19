@@ -16,7 +16,6 @@ import robosystems.Intake;
 import robosystems.Lights;
 import robosystems.Shooter;
 import robotcode.autonomous.AutonomousRoutine;
-import states.ApproachingClimberControls;
 import states.HoldingState;
 import states.IntakingState;
 import states.NextStateInfo;
@@ -135,7 +134,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
     mStateMachine = new StateMachine(testControls, mSwerveDrive, mIntake, mShooter, mExtendoArm, mClimberArms, mLights, mLimelightManager);
     
     
-    ApproachingClimberControls.setInstanceInformation(mMainController, alternateController);
+    //ApproachingClimberControls.setInstanceInformation(mMainController, alternateController);
 
 
     //To do, delete this stuff
