@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -144,13 +145,14 @@ public class Robot extends TimedRobot
     int currentIndex = 0;
     robotcode.autonomous.RoutineFactory routineFactory = new robotcode.autonomous.RoutineFactory(mSwerveDrive, mShooter, mIntake);
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Four Close Rings", routineFactory.FourCloseRingAuto()));
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Source Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Amp Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Shoot Close To Stage Close To Source Side", routineFactory.ShootCloseToStageCloseToSourceSide()));
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Avoidance Shoot Close To Stage Close To Source Side", routineFactory.AvoidanceShootCloseToStageCloseToSourceSide()));
     
   }
 
 
-  private boolean mLoggingEnabled = false;
+  private boolean mLoggingEnabled = true;
   private boolean mLastLoggingEnabledTogglePressed = false;
 
   private void checkLoggingEnabledToggle()
@@ -174,9 +176,9 @@ public class Robot extends TimedRobot
     if(mLoggingEnabled)
     {
       //SmartDashboard.putNumber("Logging At", System.currentTimeMillis());
-      //mLimelightManager.logLimelightInfo();
+      mLimelightManager.logLimelightInfo();
       
-      // mShooter.logShooterInformation();
+      mShooter.logShooterInformation();
       mStateMachine.log();
       //mExtendoArm.logExtendoArm();
       
@@ -208,6 +210,16 @@ public class Robot extends TimedRobot
   public void robotPeriodic()
   {    
   
+    try
+    {
+      SmartDashboard.putString("Raw alliance Data", DriverStation.getAlliance().get().toString());
+    }
+    catch(Exception e)
+    {
+      SmartDashboard.putString("Raw alliance Data", e.getMessage());
+
+    }
+
     mLimelightManager.calculateCameraPoseTargetSpace();
     mLimelightManager.calculateBotpose();    
 
@@ -248,17 +260,35 @@ public class Robot extends TimedRobot
       zeroAnglerEncoderAndGyro();
       return;
     }
-    mAutonomousRoutine.Run();
+    try
+    {
+      mAutonomousRoutine.Run();
+    }
+    catch (Exception e)
+    {
+      SmartDashboard.putString("error", e.getLocalizedMessage());
+    }
     //SmartDashboard.putNumber("AutonomousElapsedTime",System.currentTimeMillis() -  mAutonomousStartTime );
   }
 
 
+  private long mTeleopStartTime;
 
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() 
   {
+    mTeleopStartTime = System.currentTimeMillis();
     AllianceInfo.GetInstance().LoadAllianceFromFMS();
+    try
+    {
+      SmartDashboard.putString("OurAllianceInfo", AllianceInfo.GetInstance().GetName());
+    }
+    catch(Exception e)
+    {
+      SmartDashboard.putString("OurAllianceInfo", e.getMessage());
+    }
+
     //AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
 
     mShooter.SetAnglerLimitSwitchesEnabledOrDisabled(true);
@@ -301,6 +331,35 @@ public class Robot extends TimedRobot
 
   public void testAnglerLimits(){
 
+  }
+
+  boolean mStarted = false;
+  boolean mFirstHit = false;
+  boolean mPersSpeed = false;
+  double started = 0;
+  private void testTimedShooterTest()
+  {
+    mShooter.spinUpToHighGoalSpeed();
+    if (!mStarted)
+    {
+      mStarted = true;
+      started = System.currentTimeMillis();
+      SmartDashboard.putNumber("time when started", System.currentTimeMillis());
+    }
+
+    if (!mFirstHit && Math.abs(mShooter.getTopSpeed() - Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED) < 1)
+    {
+      mFirstHit = true;
+      SmartDashboard.putNumber("time when first reached speed", System.currentTimeMillis());
+      SmartDashboard.putNumber("delta time when first reached speed", System.currentTimeMillis() - started);
+    }
+
+    if (!mPersSpeed && mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalDriveBy))
+    {
+      mPersSpeed = true;
+      SmartDashboard.putNumber("time when persistently correct speed", System.currentTimeMillis());
+      SmartDashboard.putNumber("delta time when persistently correct speed", System.currentTimeMillis() - started);
+    }
   }
 
   private void shootySpinnyTrapTest(){
@@ -435,9 +494,9 @@ public class Robot extends TimedRobot
 
   public void teleopPeriodic()
   {
-
+    SmartDashboard.putNumber("Time Into Teleop", System.currentTimeMillis() - mTeleopStartTime);
     // autoAngleShootTest();
-
+    SmartDashboard.putNumber("AllianceInfoAimOffset", AllianceInfo.GetInstance().GetCentralAprilTagDistanceFromDriversRightWall());
     if (!mAnglerMotorAndGyroZeroingHasOccurred)
     {
       zeroAnglerEncoderAndGyro();
@@ -606,8 +665,8 @@ public class Robot extends TimedRobot
         mControls.TestOnly_IntakeRollerOn() ? 0.75 : 0
       );
 
-      mClimberArms.TEST_ONLY_SetLeftArmSpeed(Ternary(mControls.TestOnly_WestArmUp(), 0.25, mControls.TestOnly_WestArmDown(), -0.25, 0));
-      mClimberArms.TEST_ONLY_SetRightArmSpeed(Ternary(mControls.TestOnly_EastArmUp(), -0.25, mControls.TestOnly_EastArmDown(), 0.25, 0));
+      mClimberArms.TEST_ONLY_SetLeftArmSpeed(Ternary(mControls.TestOnly_WestArmUp(), 0.25 * 0.25, mControls.TestOnly_WestArmDown(), -0.25 * 0.25, 0));
+      mClimberArms.TEST_ONLY_SetRightArmSpeed(Ternary(mControls.TestOnly_EastArmUp(), -0.25 * 0.25, mControls.TestOnly_EastArmDown(), 0.25 * 0.25, 0));
 
       mExtendoArm.testOnlyRunAtSpeed(Ternary(mControls.TestOnly_ExtendoArmOut(), -0.25, mControls.TestOnly_ExtendoArmIn(), 0.25, 0));
 
@@ -621,6 +680,8 @@ public class Robot extends TimedRobot
       {        
         mSwerveDrive.StopEverything();
       }
+      
+      SmartDashboard.putBoolean("Break Beam Status", mIntake.getBreakBeamStatus());
   }
 
   private void TestClimberPID()

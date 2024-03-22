@@ -26,7 +26,7 @@ public class JoystickSwerveControls implements ISwerveControls
     {
         //square to allow for easy speed control on low speeds
         double triggerValue = mMainController.getRightTriggerAxis();
-        return triggerValue * triggerValue;
+        return (triggerValue * triggerValue) * 0.93; //ATS
     }
 
     public double GetSwerveRotationalSpeed()

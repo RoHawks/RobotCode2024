@@ -19,7 +19,7 @@ public class Constants {
     // Shooter Constants
     public static final double ANGLE_ADJUSTMENT = -2.7;
     public static final double INTAKING_ANGLE = 20 + ANGLE_ADJUSTMENT;
-    public static final double LOW_GOAL_ANGLE = 36;//34.2;
+    public static final double LOW_GOAL_ANGLE = 39;//34.2;
     public static final double HIGH_GOAL_ANGLE = 64 + ANGLE_ADJUSTMENT;
     public static final double CLIMBING_ANGLE = 189 + ANGLE_ADJUSTMENT;
 
@@ -29,7 +29,7 @@ public class Constants {
     
     public static final double Z_VELOCITY_COMPENSATION = -17;
 
-    private static final double TEST_ONLY_SLOW_DOWN_SHOOTER_CONSTANT_NORMALLY_ONE = 1.0;
+    private static final double TEST_ONLY_SLOW_DOWN_SHOOTER_CONSTANT_NORMALLY_ONE = 1;
     public static final double SHOOTER_HIGH_TOP_DEFAULT_SPEED = TEST_ONLY_SLOW_DOWN_SHOOTER_CONSTANT_NORMALLY_ONE * 46.0; //85.0;//This has been 46 for a while, but now we need to scale it up based on the new gear ratio   u46.0; // at Townsend this was 46.0 but it doesn't seem like we can realistically hold 46
     public static final double SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED = TEST_ONLY_SLOW_DOWN_SHOOTER_CONSTANT_NORMALLY_ONE * 46.0 * 3.0 / 4.0;//85.0 * 0.68;//46.0 * 3.0/4.0; // at Townsend this was 46.0 * 3.0/4.0 but it doesn't seem like we can realistically hold 46
 

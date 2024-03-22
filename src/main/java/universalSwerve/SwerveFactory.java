@@ -76,8 +76,9 @@ public class SwerveFactory
         int nwTurnChannel = 16;
 
         CurrentLimitsConfigs driveCurrentLimitConfig = new CurrentLimitsConfigs();
-        driveCurrentLimitConfig.SupplyCurrentLimit = 40;
-        driveCurrentLimitConfig.SupplyCurrentThreshold = 60;
+        driveCurrentLimitConfig.SupplyCurrentLimit = 20;
+        driveCurrentLimitConfig.SupplyCurrentThreshold = 21;//ats this was 60 and is meaningles as such
+        driveCurrentLimitConfig.SupplyTimeThreshold = 0;
         driveCurrentLimitConfig.SupplyCurrentLimitEnable = true;
         
         MotorOutputConfigs driveMotorOutputConfig = new MotorOutputConfigs();

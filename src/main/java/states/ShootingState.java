@@ -142,6 +142,11 @@ public class ShootingState extends AState {
             return new NextStateInfo(States.Holding, mShooterMode);
         }
 
+        if ((initialShooterMode == ShooterMode.HighGoalDriveBy && mShooterMode == ShooterMode.AutoAim))
+        {
+            return new NextStateInfo(States.Holding, mShooterMode);
+        }
+
         //ATS, 3/19:  adding the code below
         //If you switched to low goal modew while it was in drive-by, it would just shoot right away.
 
@@ -187,7 +192,7 @@ public class ShootingState extends AState {
             SmartDashboard.putNumber("AutoLogs: mTimeWhenCloseEnough Difference", System.currentTimeMillis() -  mTimeWhenCloseEnough);
             SmartDashboard.putNumber("AutoLogs After: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
             SmartDashboard.putBoolean("AutoLogs: AnglerCloseEnough", mShooter.checkIfAnglerIsCloseEnough());
-            if (mTimeWhenCloseEnough > 0 && System.currentTimeMillis() - mTimeWhenCloseEnough > 1000)
+            if (mTimeWhenCloseEnough > 0 && System.currentTimeMillis() - mTimeWhenCloseEnough > 200)//Ats was1000 changed to 200
             {
                 // mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalManual);
                 // double angle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
@@ -325,6 +330,7 @@ public class ShootingState extends AState {
         {
             if (System.currentTimeMillis() - mTimeStartedToShoot > 500)
             {
+                // SmartDashboard.putNumber()
                 mExtendoArm.retract();
             }
         }
@@ -489,7 +495,7 @@ public class ShootingState extends AState {
          
         if (!mHasShot)
         {
-            if (pCameraPositionInTargetSpace != null)
+            if (pCameraPositionInTargetSpace != null && LimelightInformation.isValidBotPoseResults(pCameraPositionInTargetSpace))
             {
                 mLights.SetLightingScheme(LightingScheme.HoldingWithCameraLock);
             }

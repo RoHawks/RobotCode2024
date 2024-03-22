@@ -230,7 +230,7 @@ public class JoystickControlsWithSwerve implements Controls {
 
     public boolean TestOnly_EastArmDown()
     {
-        return mAlternateController.isConnected() && mAlternateController.getLeftY() > 0.75;
+        return mAlternateController.isConnected() && mAlternateController.getRightX() > 0.75;
     }
 
     public boolean TestOnly_ExtendoArmOut()

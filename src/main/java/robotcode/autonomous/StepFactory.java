@@ -11,6 +11,7 @@ import robotcode.autonomous.steps.GoToShooterAngleAction;
 import robotcode.autonomous.steps.IntakeThenHoldAction;
 import robotcode.autonomous.steps.PrepShooterToShootAction;
 import robotcode.autonomous.steps.ShootAction;
+import robotcode.autonomous.steps.WaitAction;
 import universalSwerve.SwerveDrive;
 
 public class StepFactory 
@@ -50,6 +51,12 @@ public class StepFactory
         return returnValue;
     }
     
+    public Step CreateWaitStep(long pTime)
+    {
+        Step returnValue = new Step("WaitStep");
+        returnValue.AddAction(new WaitAction(pTime));        
+        return returnValue;
+    }
 
     public Step CreateFollowTrajectoryAndInstaShootStep(String pTrajectoryName, ArrayList<Pair<Double, Long>> pairsOfAnglesAndTimes)
     {

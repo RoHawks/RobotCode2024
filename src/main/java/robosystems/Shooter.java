@@ -269,6 +269,11 @@ public class Shooter{
         // shootingFinished = (speed == 0.0);
     }
 
+    public double getTopSpeed()
+    {   
+        return mTopShooterRoller.getVelocity().getValueAsDouble();
+    }
+
 
 
     public void setAnglerSpeed(double pSpeed)

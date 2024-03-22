@@ -45,7 +45,7 @@ public class RoutineFactory
         //returnValue.AddStep(mStepFactory.CreateGameStartStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("OnLeftTwoNotePlusMidfield.1", initialAngle));
         returnValue.AddStep(mStepFactory.CreateShootStep());
-
+        
         ArrayList<Pair<Double,Long>> eightTeenDegrees = new ArrayList<>();
         eightTeenDegrees.add(new Pair<Double,Long>(18.0, 100000l));
         returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("OnLeftTwoNotePlusMidfield.2", eightTeenDegrees));
@@ -65,7 +65,7 @@ public class RoutineFactory
 
     public AutonomousRoutine ShootCloseToStageCloseToSourceSide()
     {
-         double initialAngle = 36;
+         double initialAngle = 34;
         AutonomousRoutine returnValue = new AutonomousRoutine("ShootCloseToStageCloseToSourceSide");
         //returnValue.AddStep(mStepFactory.CreateGameStartStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("ShootCloseToStageCloseToSourceSide.1", initialAngle));
@@ -81,6 +81,31 @@ public class RoutineFactory
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
         returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine AvoidanceShootCloseToStageCloseToSourceSide()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("AvoidanceShootCloseToStageCloseToSourceSide");
+        //returnValue.AddStep(mStepFactory.CreateGameStartStep());
+        returnValue.AddStep(mStepFactory.CreateWaitStep(6000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("AvoidanceShootCloseToStageCloseToSourceSide.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> eightTeenDegrees = new ArrayList<>();
+        eightTeenDegrees.add(new Pair<Double,Long>(18.0, 100000l));
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("AvoidanceShootCloseToStageCloseToSourceSide.2", eightTeenDegrees));
+        
+        ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>();
+        thirtySixDegrees.add(new Pair<Double,Long>(36.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;

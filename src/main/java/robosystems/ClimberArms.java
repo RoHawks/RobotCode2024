@@ -98,6 +98,8 @@ public class ClimberArms
   {
     mLeftDrumMotor.setControl(mPositionVoltage.withPosition(pPosition));
     mRightDrumMotor.setControl(mPositionVoltage.withPosition(pPosition * rightModifier));
+   
+   
     mLastTargetPosition = pPosition;
   }
 

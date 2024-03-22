@@ -19,7 +19,7 @@ public class ExtendoArm {
     private RelativeEncoder mExtendoEncoder;
     private SparkLimitSwitch mTrapIntakeLimitSwitch;
     
-    private double LOW_GOAL_TARGET = -3600; //Replace with proper value
+    private double LOW_GOAL_TARGET = -3600 * 1.02; //Replace with proper value
     private double TRAP_TARGET = -2000; //Replace with proper value
     private double RETRACT_TARGET = -50;
    
