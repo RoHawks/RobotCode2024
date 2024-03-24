@@ -265,20 +265,23 @@ public class RoutineFactory
             "AmpSideAllMiddleRushCraziest4Note.2", null, unknownAmpSideAngle));
         returnValue.AddStep(mStepFactory.CreateShootStep());
 
+        ArrayList<Pair<Double,Long>> unknownUnderStageAngle = new ArrayList<>();
+        unknownUnderStageAngle.add(new Pair<Double,Long>(27.0, 100000l));
+
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
-            "AmpSideAllMiddleRushCraziest4Note.3", null, unknownAmpSideAngle));
+            "AmpSideAllMiddleRushCraziest4Note.3", null, unknownUnderStageAngle));
         returnValue.AddStep(mStepFactory.CreateShootStep());
 
         //get final note but dont shoot
 
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
-            "AmpSideAllMiddleRushCraziest4Note.4", null, unknownAmpSideAngle));
+            "AmpSideAllMiddleRushCraziest4Note.4", null, unknownUnderStageAngle));
         returnValue.AddStep(mStepFactory.CreateShootStep());
 
         //get try to get out of the stage but probably run out of time
 
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
-            "AmpSideAllMiddleRushCraziest4Note.5", null, unknownAmpSideAngle));
+            "AmpSideAllMiddleRushCraziest4Note.5", null, unknownUnderStageAngle));
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;
