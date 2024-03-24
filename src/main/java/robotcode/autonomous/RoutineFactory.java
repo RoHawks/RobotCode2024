@@ -110,4 +110,179 @@ public class RoutineFactory
         
         return returnValue;
     }
+
+    public AutonomousRoutine SourceSideCrazyModeAvoidStage()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("SourceSideCrazyModeAvoidStage");
+        //to let shooter wheels warm up
+        returnValue.AddStep(mStepFactory.CreateWaitStep(500l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("SourceSideCrazyModeAvoidStage.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> unknownSourceSideAngle = new ArrayList<>();
+        unknownSourceSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazyModeAvoidStage.2", null, unknownSourceSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+ 
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazyModeAvoidStage.3", null, unknownSourceSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazyModeAvoidStage.4", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine SourceSideCrazierModeUnderStage()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("SourceSideCrazierModeUnderStage");
+        //to let shooter wheels warm up
+        returnValue.AddStep(mStepFactory.CreateWaitStep(500l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("SourceSideCrazierModeUnderStage.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> unknownUnderStageAngle = new ArrayList<>();
+        unknownUnderStageAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazierModeUnderStage.2", null, unknownUnderStageAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+ 
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazierModeUnderStage.3", null, unknownUnderStageAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "SourceSideCrazierModeUnderStage.4", null, unknownUnderStageAngle));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine AmpSideCrazy5Note()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("AmpSideCrazy5Note");
+        //to let shooter wheels warm up
+        returnValue.AddStep(mStepFactory.CreateWaitStep(500l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("AmpSideCrazy5Note.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> instaShootAngle = new ArrayList<>();
+        instaShootAngle.add(new Pair<Double,Long>(18.0, 100000l));
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("AmpSideCrazy5Note.2", instaShootAngle));
+        
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+ 
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazy5Note.3", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazy5Note.4", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazy5Note.5", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine AmpSideCrazyInstaShootRushMiddleNoPreload4Note()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("AmpSideCrazyInstaShootRushMiddleNoPreload4Note");
+        //to let shooter wheels warm up
+
+
+
+        ArrayList<Pair<Double,Long>> instaShootAngle = new ArrayList<>();
+        instaShootAngle.add(new Pair<Double,Long>(18.0, 100000l));
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep(
+            "AmpSideCrazyInstaShootRushMiddleNoPreload4Note.1", instaShootAngle));
+        
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazyInstaShootRushMiddleNoPreload4Note.2", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+ 
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazyInstaShootRushMiddleNoPreload4Note.3", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazyInstaShootRushMiddleNoPreload4Note.4", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        //get final note but dont shoot
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideCrazyInstaShootRushMiddleNoPreload4Note.5", null, unknownAmpSideAngle));
+        
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine AmpSideAllMiddleRushCraziest4Note()
+    {
+        double initialAngle = 34;
+        AutonomousRoutine returnValue = new AutonomousRoutine("AmpSideAllMiddleRushCraziest4Note");
+        //to let shooter wheels warm up
+
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideAllMiddleRushCraziest4Note.1", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+ 
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideAllMiddleRushCraziest4Note.2", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideAllMiddleRushCraziest4Note.3", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        //get final note but dont shoot
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideAllMiddleRushCraziest4Note.4", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        //get try to get out of the stage but probably run out of time
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AmpSideAllMiddleRushCraziest4Note.5", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    
 }
