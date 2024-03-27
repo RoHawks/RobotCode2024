@@ -8,6 +8,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -43,6 +44,7 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         InitializeFalconPID(pPidfConfiguration);
         mWheelDiameter = pWheelDiameter;
         mGearRatio = pGearRatio;
+        
     }
 
     @Override
@@ -141,6 +143,14 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     
     private void InitializeFalconPID(PIDFConfiguration pPidfConfiguration)
     {
+        Slot0Configs slot0Configs = new Slot0Configs();
+        slot0Configs.kP = 0;
+        slot0Configs.kI = 0;
+        slot0Configs.kD = 0;
+        slot0Configs.kV = pPidfConfiguration.F();
+        mFalcon.getConfigurator().apply(slot0Configs);
+
+        /* 
         TalonFXConfiguration pidConfiguration = new TalonFXConfiguration();
         pidConfiguration.Slot0.kP = pPidfConfiguration.P();
         pidConfiguration.Slot0.kP = pPidfConfiguration.I();
@@ -150,7 +160,7 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         //SmartDashboard.putNumber("KV", pPidfConfiguration.F());
         StatusCode statusCode = mFalcon.getConfigurator().apply(pidConfiguration);
         //SmartDashboard.putString("StatusCode", statusCode.toString());
-        
+        */
     }
 
     public void StopEverything()

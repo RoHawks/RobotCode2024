@@ -159,6 +159,16 @@ public class LimelightInformation {
         return mBotpose;
     }
 
+    public static int BotPose_GetCountOfTagsInView(double[] pBotposeResults)
+    {
+        return Double.valueOf(pBotposeResults[7]).intValue();
+    }
+
+    public static boolean HasAnyTagsInView(double[] pBotposeResults)
+    {
+        return BotPose_GetCountOfTagsInView(pBotposeResults) > 0;
+    } 
+
     public static double BotPose_GetDistanceFromEastFieldWall(double[] pBotposeResults)
     {
         return pBotposeResults[1];
@@ -196,6 +206,11 @@ public class LimelightInformation {
 
     public static boolean isValidBotPoseResults(double[] pBotposeResults)
     {
+        if(!LimelightInformation.HasAnyTagsInView(pBotposeResults))
+        {
+            return false;
+        }
+        
         for(int i = 0; i < 4; i++)
         {
             if(Math.abs(pBotposeResults[i]) > 0.001)

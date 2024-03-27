@@ -144,6 +144,8 @@ public class Robot extends TimedRobot
   {
     int currentIndex = 0;
     robotcode.autonomous.RoutineFactory routineFactory = new robotcode.autonomous.RoutineFactory(mSwerveDrive, mShooter, mIntake);
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "PlayoffsA", routineFactory.PlayoffsA()));
+    
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Four Close Rings", routineFactory.FourCloseRingAuto()));
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Amp Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Shoot Close To Stage Close To Source Side", routineFactory.ShootCloseToStageCloseToSourceSide()));
@@ -169,8 +171,8 @@ public class Robot extends TimedRobot
 
   private void logMainMechanisms()
   {
-    SmartDashboard.putBoolean("Forward Limit", mShooter.testGetForwardAnglerLimitSwitchTriggered());
-    SmartDashboard.putBoolean("Reverse Limit", mShooter.testGetReverseAnglerLimitSwitchTriggered());
+    //SmartDashboard.putBoolean("Forward Limit", mShooter.testGetForwardAnglerLimitSwitchTriggered());
+    //SmartDashboard.putBoolean("Reverse Limit", mShooter.testGetReverseAnglerLimitSwitchTriggered());
 
 
     if(mLoggingEnabled)
@@ -178,13 +180,13 @@ public class Robot extends TimedRobot
       //SmartDashboard.putNumber("Logging At", System.currentTimeMillis());
       mLimelightManager.logLimelightInfo();
       
-      mShooter.logShooterInformation();
-      mStateMachine.log();
+      //mShooter.logShooterInformation();
+      //mStateMachine.log();
       //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
       
-      //mIntake.logIntake();
+      mIntake.logIntake();
       //mShooter.logShooterInformation();
   
       /*
@@ -710,8 +712,114 @@ public class Robot extends TimedRobot
     //TestClimberPID();
     // testSpinnyTrapShot();
     //shootySpinnyTrapTest();
-    RealTestMode();
+    //RealTestMode();
+    testBlower();
+    //testShooterSpeed();
+    //testBottomShooterSpeed();
     
+  }
+
+  private void testBlower()
+  {
+    this.mIntake.TestSetTrapIntakeSpeed(1);
+  }
+
+
+  private boolean mTestHasBegun = false;
+  private boolean mReachedMilestoneA= false;
+  private boolean mReachedMilestoneB= false;
+  private boolean mReachedMilestoneC= false;
+  private boolean mReachedMilestoneD= false;
+  private long mTestStartTimestamp = 0;
+  private void testShooterSpeed()
+  {
+
+    if(mMainController.getAButton())
+    {
+      
+      if(!mTestHasBegun)
+      {
+        mTestHasBegun = true;
+        mTestStartTimestamp = System.currentTimeMillis();
+      }
+      mShooter.setSpeed(Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED, 0);
+      if(!mReachedMilestoneA && Math.abs(mShooter.getTopSpeed()) > 35.0 )
+      {
+        mReachedMilestoneA = true;
+        SmartDashboard.putNumber("Milestone A", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneB && Math.abs(mShooter.getTopSpeed()) > 40.0 )
+      {
+        mReachedMilestoneB = true;
+        SmartDashboard.putNumber("Milestone B", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneC && Math.abs(mShooter.getTopSpeed()) > 44.0 )
+      {
+        mReachedMilestoneC = true;
+        SmartDashboard.putNumber("Milestone C", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneD && Math.abs(mShooter.getTopSpeed()) > 45.0 )
+      {
+        mReachedMilestoneD = true;
+        SmartDashboard.putNumber("Milestone D", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+
+    }
+    else
+    {
+      mShooter.setSpeed(0, 0);
+      mTestHasBegun = false;
+      mReachedMilestoneA = false;
+      mReachedMilestoneB = false;
+      mReachedMilestoneC = false;
+      mReachedMilestoneD = false;
+    }
+  }
+
+
+   private void testBottomShooterSpeed()
+  {
+
+    if(mMainController.getAButton())
+    {
+      
+      if(!mTestHasBegun)
+      {
+        mTestHasBegun = true;
+        mTestStartTimestamp = System.currentTimeMillis();
+      }
+      mShooter.setSpeed(0, Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
+      if(!mReachedMilestoneA && Math.abs(mShooter.getBottomSpeed()) > 35.0 * 0.75)
+      {
+        mReachedMilestoneA = true;
+        SmartDashboard.putNumber("Milestone A", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneB && Math.abs(mShooter.getBottomSpeed()) > 40.0  * 0.75 )
+      {
+        mReachedMilestoneB = true;
+        SmartDashboard.putNumber("Milestone B", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneC && Math.abs(mShooter.getBottomSpeed()) > 44.0  * 0.75 )
+      {
+        mReachedMilestoneC = true;
+        SmartDashboard.putNumber("Milestone C", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneD && Math.abs(mShooter.getBottomSpeed()) > 45.0  * 0.75 )
+      {
+        mReachedMilestoneD = true;
+        SmartDashboard.putNumber("Milestone D", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+
+    }
+    else
+    {
+      mShooter.setSpeed(0, 0);
+      mTestHasBegun = false;
+      mReachedMilestoneA = false;
+      mReachedMilestoneB = false;
+      mReachedMilestoneC = false;
+      mReachedMilestoneD = false;
+    }
   }
 
   private double mTestOnlyShooterSpeedTop = 0;

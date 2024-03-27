@@ -28,7 +28,7 @@ public class RoutineFactory
         ArrayList<Pair<Double,Long>> listOfPairs = new ArrayList<>();
         listOfPairs.add(new Pair<Double,Long>(27.0, 1250l));
         listOfPairs.add(new Pair<Double,Long>(30.0, 4000l));
-        listOfPairs.add(new Pair<Double,Long>(22.0, 100000l));
+        listOfPairs.add(new Pair<Double,Long>(21.0, 100000l));
     
 
         returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("4CloseRingAuto.2", listOfPairs));
@@ -106,6 +106,31 @@ public class RoutineFactory
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
         returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+    }
+
+    public AutonomousRoutine PlayoffsA()
+    {
+        double initialAngle = 31;
+        AutonomousRoutine returnValue = new AutonomousRoutine("PlayoffsA");
+        //returnValue.AddStep(mStepFactory.CreateGameStartStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("PlayoffsA.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateWaitStep(1000l));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        // ArrayList<Pair<Double,Long>> eightTeenDegrees = new ArrayList<>();
+        // eightTeenDegrees.add(new Pair<Double,Long>(18.0, 100000l)); // NEEDS ADJUSTMENT
+        // returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("PlayoffsA.2", eightTeenDegrees));
+        
+        ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>(); // NEEDS ADJUSTMENT
+        thirtySixDegrees.add(new Pair<Double,Long>(24.5, 100000l));
+        
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("PlayoffsA.2", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("PlayoffsA.3", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;

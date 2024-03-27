@@ -84,7 +84,7 @@ public class Shooter{
 
     //private boolean mHasSeenTheTag;
 
-    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, false, false, false);
+    private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, false, 0, 0, false, false, false);
     //private final com.ctre.phoenix6.controls.VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, false, false, false);
 
     private LimelightManager mLimelightManager;
@@ -103,7 +103,8 @@ public class Shooter{
     }
 
     
-    private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted, TalonFXConfiguration pShooterConfig)
+    private TalonFX CreateShooterMotor(int pDeviceID, boolean pIsInverted, TalonFXConfiguration pShooterConfig,
+    ClosedLoopRampsConfigs pClrc, CurrentLimitsConfigs pClc)
     {
 
         TalonFX returnValue =  new TalonFX(pDeviceID);  
@@ -113,24 +114,8 @@ public class Shooter{
         MotorOutputConfigs motorOutputConfig = new MotorOutputConfigs();
         motorOutputConfig.NeutralMode = NeutralModeValue.Coast;
         returnValue.getConfigurator().apply(motorOutputConfig);
-        
-        
-        ClosedLoopRampsConfigs clrc = new ClosedLoopRampsConfigs();
-        clrc.DutyCycleClosedLoopRampPeriod = 0.5;
-        clrc.VoltageClosedLoopRampPeriod = 0.5;
-        returnValue.getConfigurator().apply(clrc);
-
-        CurrentLimitsConfigs clc = new CurrentLimitsConfigs();
-        clc.SupplyCurrentLimit = 45;//amps
-        clc.SupplyCurrentLimitEnable = true;
-        clc.SupplyCurrentThreshold = 0.05;//seconds
-        returnValue.getConfigurator().apply(clc);
-
-        
-        
-
-
-
+        returnValue.getConfigurator().apply(pClrc);
+        returnValue.getConfigurator().apply(pClc);
         return returnValue;
     }
 
@@ -170,9 +155,79 @@ public class Shooter{
         return returnValue;
     }
 
+    public enum RollerEnumeration
+    {
+        TOP,
+        BOTTOM
+    }
 
+    private ClosedLoopRampsConfigs GetClosedLoopRampsConfigs(RobotMode pRobotMode, RollerEnumeration pRoller)
+    {
+        ClosedLoopRampsConfigs returnValue = new ClosedLoopRampsConfigs();
+        if(pRobotMode == RobotMode.AUTONOMOUS)
+        {
+            if(pRoller == RollerEnumeration.TOP)
+            {
+                returnValue.DutyCycleClosedLoopRampPeriod = 0.3;
+                returnValue.VoltageClosedLoopRampPeriod = 0.3;
+            }
+            else //bottom
+            {
+                returnValue.DutyCycleClosedLoopRampPeriod = 0.5;
+                returnValue.VoltageClosedLoopRampPeriod = 0.5;
+            }
+        }
+        else //TELEOP
+        {
+            if(pRoller == RollerEnumeration.TOP)
+            {
+                returnValue.DutyCycleClosedLoopRampPeriod = 0.6;
+                returnValue.VoltageClosedLoopRampPeriod = 0.6;
+            }
+            else //bottom
+            {
+                returnValue.DutyCycleClosedLoopRampPeriod = 0.5;
+                returnValue.VoltageClosedLoopRampPeriod = 0.5;
+            }
+        }
+
+        return returnValue;
+    }
     
+    private CurrentLimitsConfigs GetCurrentLimitsConfigs(RobotMode pRobotMode, RollerEnumeration pRoller)
+    {
+        CurrentLimitsConfigs returnValue = new CurrentLimitsConfigs();
+        if(pRobotMode == RobotMode.AUTONOMOUS)
+        {
+            if(pRoller == RollerEnumeration.TOP)
+            {
+                returnValue.SupplyCurrentLimit = 70;//amps
+                returnValue.SupplyCurrentLimitEnable = true;
+            }
+            else //bottom
+            {
+                returnValue.SupplyCurrentLimit = 38;//amps
+                returnValue.SupplyCurrentLimitEnable = true;
+            }
+        }
+        else //TELEOP
+        {
+            if(pRoller == RollerEnumeration.TOP)
+            {
+                returnValue.SupplyCurrentLimit = 50;//amps
+                returnValue.SupplyCurrentLimitEnable = true;
+            }
+            else //bottom
+            {
+                returnValue.SupplyCurrentLimit = 38;//amps
+                returnValue.SupplyCurrentLimitEnable = true;
+            }
+        }
+
+        return returnValue;
+    }
     
+
 
     public Shooter(LimelightManager pLimelightManager) // initialization method
     {
@@ -189,7 +244,8 @@ public class Shooter{
         
         topShooterConfig.Slot0.kA = 0;
 
-        mTopShooterRoller = CreateShooterMotor(4, true, topShooterConfig);
+    
+        mTopShooterRoller = CreateShooterMotor(4, true, topShooterConfig, GetClosedLoopRampsConfigs(RobotMode.TELEOPERATED, RollerEnumeration.TOP), GetCurrentLimitsConfigs(RobotMode.TELEOPERATED, RollerEnumeration.TOP));
 
         TalonFXConfiguration bottomShooterConfig = new TalonFXConfiguration();            
         bottomShooterConfig.Slot0.kS = -0.84808;
@@ -197,30 +253,9 @@ public class Shooter{
         bottomShooterConfig.Slot0.kI = 0;
         bottomShooterConfig.Slot0.kD = 0.02;
         bottomShooterConfig.Slot0.kV = 0.17996;
-        bottomShooterConfig.Slot0.kA = 0;
+        bottomShooterConfig.Slot0.kA = 0;        
 
-        /*These were from the ill fated belt driven test
-        TalonFXConfiguration topShooterConfig = new TalonFXConfiguration();            
-        topShooterConfig.Slot0.kS = 0.183;
-        topShooterConfig.Slot0.kP = 0.0047239;
-        topShooterConfig.Slot0.kI = 0;
-        topShooterConfig.Slot0.kD = 0.02;
-        topShooterConfig.Slot0.kV = 0.11624;
-        
-        topShooterConfig.Slot0.kA = 0;
-
-        mTopShooterRoller = CreateShooterMotor(4, true, topShooterConfig);
-
-        TalonFXConfiguration bottomShooterConfig = new TalonFXConfiguration();            
-        bottomShooterConfig.Slot0.kS = 0.17797;
-        bottomShooterConfig.Slot0.kP = 0.025838;
-        bottomShooterConfig.Slot0.kI = 0;
-        bottomShooterConfig.Slot0.kD = 0.02;
-        bottomShooterConfig.Slot0.kV = 0.12487;
-        bottomShooterConfig.Slot0.kA = 0;
-        */
-
-        mBottomShooterRoller = CreateShooterMotor(5, false, bottomShooterConfig);
+        mBottomShooterRoller = CreateShooterMotor(5, false, bottomShooterConfig, GetClosedLoopRampsConfigs(RobotMode.TELEOPERATED, RollerEnumeration.BOTTOM), GetCurrentLimitsConfigs(RobotMode.TELEOPERATED, RollerEnumeration.BOTTOM));
 
         mPIDController = mAnglerMotor.getPIDController();
         //shootingFinished = true;
@@ -274,7 +309,10 @@ public class Shooter{
         return mTopShooterRoller.getVelocity().getValueAsDouble();
     }
 
-
+    public double getBottomSpeed()
+    {   
+        return mBottomShooterRoller.getVelocity().getValueAsDouble();
+    }
 
     public void setAnglerSpeed(double pSpeed)
     {

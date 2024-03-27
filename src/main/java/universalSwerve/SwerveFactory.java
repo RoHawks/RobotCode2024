@@ -76,13 +76,17 @@ public class SwerveFactory
         int nwTurnChannel = 16;
 
         CurrentLimitsConfigs driveCurrentLimitConfig = new CurrentLimitsConfigs();
-        driveCurrentLimitConfig.SupplyCurrentLimit = 20;
-        driveCurrentLimitConfig.SupplyCurrentThreshold = 21;//ats this was 60 and is meaningles as such
-        driveCurrentLimitConfig.SupplyTimeThreshold = 0;
+        driveCurrentLimitConfig.SupplyCurrentLimit = 30;
+        driveCurrentLimitConfig.SupplyCurrentThreshold = 31;//ats this was 60 and is meaningles as such
+        driveCurrentLimitConfig.SupplyTimeThreshold = 0.04;
         driveCurrentLimitConfig.SupplyCurrentLimitEnable = true;
         
+
+        /*ATS, this stuff was getting ignored because we were using the TalonFXConfiguirtion
+        In TalonFXTranslatonSystem.java
+        So we should ignore these for now, even though we may want to add the ramp rates back in NY */
+        /*       
         MotorOutputConfigs driveMotorOutputConfig = new MotorOutputConfigs();
-        //driveMotorOutputConfig.Inverted = InvertedValue.CounterClockwise_Positive;
         driveMotorOutputConfig.NeutralMode = NeutralModeValue.Brake;        
 
         FeedbackConfigs driveMotorfeedbackConfigs = new FeedbackConfigs();
@@ -91,16 +95,18 @@ public class SwerveFactory
         ClosedLoopRampsConfigs driveMotorClosedLoopRampConfigs = new ClosedLoopRampsConfigs();
         driveMotorClosedLoopRampConfigs.DutyCycleClosedLoopRampPeriod = 0.05;
         driveMotorClosedLoopRampConfigs.VoltageClosedLoopRampPeriod= 0.05;
-        
+        */
 
 
         class DriveFalconCreator { TalonFX CreateDriveFalcon(int pDriveChannel) 
             { 
                 TalonFX returnValue = new TalonFX(pDriveChannel);
                 returnValue.getConfigurator().apply(driveCurrentLimitConfig);                                
+                /*
                 returnValue.getConfigurator().apply(driveMotorOutputConfig);                
                 returnValue.getConfigurator().apply(driveMotorfeedbackConfigs);                
                 returnValue.getConfigurator().apply(driveMotorClosedLoopRampConfigs);
+                */
                 
                 returnValue.setInverted(false);
                                                 

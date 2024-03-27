@@ -229,6 +229,13 @@ public class Intake {
         logIntakeTalon("TopConveyor", mConveyorBeltTop);
         logIntakeTalon("BottomConveyor", mConveyorBeltBottom);
         logIntakeRoller();
+        logTrapBlower();
+        
+    }
+
+    private void logTrapBlower()
+    {
+        SmartDashboard.putNumber("TrapBlower-Current", mTrapIntake.getOutputCurrent());
     }
 
 }

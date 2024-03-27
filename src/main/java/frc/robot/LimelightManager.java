@@ -165,34 +165,21 @@ public class LimelightManager
 
     
   private double lastRecordedX = 0; 
-  private void logLimelightInfo(String pCameraName, double[] camerapose_targetspace)
+  private void logLimelightInfo(String pCameraName, double[] pAllianceBotpose)
   {
 
     
-   if (camerapose_targetspace != null)
+   if (pAllianceBotpose != null)
     {
-      SmartDashboard.putNumber(pCameraName + "Lime: X change since last TS", camerapose_targetspace[0] - lastRecordedX);
-      lastRecordedX = camerapose_targetspace[0];
-      SmartDashboard.putNumber(pCameraName + "X displacement", camerapose_targetspace[0]);
-      SmartDashboard.putNumber(pCameraName + "Y displacement", camerapose_targetspace[1]);
-      SmartDashboard.putNumber(pCameraName + "Z displacement", camerapose_targetspace[2]);
-
-      SmartDashboard.putNumber(pCameraName + "Roll displacement", camerapose_targetspace[3]);
-      SmartDashboard.putNumber(pCameraName + "Pitch displacement", camerapose_targetspace[4]);
-      SmartDashboard.putNumber(pCameraName + "Yaw displacement", camerapose_targetspace[5]);
-      SmartDashboard.putNumber(pCameraName + "Distance from tag", Math.abs(camerapose_targetspace[0] - (-0.29)));
-      
+        SmartDashboard.putNumber(pCameraName + "Distance From East Wall", LimelightInformation.BotPose_GetDistanceFromEastFieldWall(pAllianceBotpose));    
+        SmartDashboard.putNumber(pCameraName + "Distance From Alliance Wall", LimelightInformation.BotPose_GetDistanceFromAllianceStationWall(pAllianceBotpose));
+        SmartDashboard.putNumber(pCameraName + "Tag Count", LimelightInformation.BotPose_GetCountOfTagsInView(pAllianceBotpose));
     }
     else
     {
-      SmartDashboard.putNumber(pCameraName + "X displacement", -1);
-      SmartDashboard.putNumber(pCameraName + "Y displacement", -1);
-      SmartDashboard.putNumber(pCameraName + "Z displacement", -1);
-      SmartDashboard.putNumber(pCameraName + "Roll displacement", -1);
-      SmartDashboard.putNumber(pCameraName + "Pitch displacement", -1);
-      SmartDashboard.putNumber(pCameraName + "Yaw displacement", -1);
-      
-      
+        SmartDashboard.putNumber(pCameraName + "Distance From East Wall", -1);    
+        SmartDashboard.putNumber(pCameraName + "Distance From Alliance Wall", -1);
+        SmartDashboard.putNumber(pCameraName + "Tag Count", -1);      
     }
   }
 
