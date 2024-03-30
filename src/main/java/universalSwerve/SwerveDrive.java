@@ -64,6 +64,9 @@ public class SwerveDrive
 		ROBOT_RELATIVE
 	}
 
+    private SwerveNudgingDirection mLastSwerveNudgingDirection = SwerveNudgingDirection.NONE;
+    private long mTimeThatCurrentNudgingStarted = 0;
+
     public SwerveDrive(Wheel pNEWheel, Wheel pSEWheel, Wheel pSWWheel, Wheel pNWWheel, IGyroscope pGyroscope,
         double pMaxLinearSpeed, double pMaxRotationalSpeed, double pNudgingSpeed)
     {
@@ -97,6 +100,15 @@ public class SwerveDrive
 
 
     }
+
+    public void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous)
+    {
+        for(int i = 0; i < mWheels.length; i++)
+        {
+            mWheels[i].ConfigureDriveMotorsForGameMode(pIsAutonomous);
+        }
+    }
+
 
     public void InitializeOdometry()
     {
@@ -538,8 +550,39 @@ public class SwerveDrive
 
     }
 
+    private double CalculateNudgeAccelerationMultiplier(long pStartedNudgingTimestamp, long pCurrentNudgingTimestamp)
+    {
+        //Let's do this...
+        //for the first 1/10th of a second, don't accelerate at al.
+        //For the next 9/10th of a second, scale linearly from original speed to double speed
+        double returnValue;
+        double TIME_BEFORE_ACCELERATION = 200;
+        double TIME_TO_MAX_ACCELERATION = 1000;
+        double MULTIPLIER_AT_MAX_ACCELERATION = 3.0;
+        double DEFAULT_MULTIPLIER = 1.0;
+        double timeSinceStarted = (double)pCurrentNudgingTimestamp - (double)pStartedNudgingTimestamp;
+         SmartDashboard.putNumber("NudgetimeSinceStarted", timeSinceStarted);
+        if(timeSinceStarted < TIME_BEFORE_ACCELERATION)
+        {
+            returnValue =  DEFAULT_MULTIPLIER;
+        }
+        else
+        {
+            double percentageIntoAccelerationWindow = Math.max(0, Math.min(1.0, (timeSinceStarted - TIME_BEFORE_ACCELERATION) / (TIME_TO_MAX_ACCELERATION - TIME_BEFORE_ACCELERATION)));
+            returnValue = (percentageIntoAccelerationWindow * (MULTIPLIER_AT_MAX_ACCELERATION - DEFAULT_MULTIPLIER)) + DEFAULT_MULTIPLIER;            
+        }
+        SmartDashboard.putNumber("NudgeMultiplier", returnValue);
+        return returnValue;
+    }
+
     public void Nudge(SwerveNudgingDirection pDirection, double pNudgeSpeedMultiplier, double pAngleOffset)
     {
+        if(pDirection != mLastSwerveNudgingDirection)
+        {
+            mTimeThatCurrentNudgingStarted = System.currentTimeMillis();
+            mLastSwerveNudgingDirection = pDirection;
+        }
+
         double xNudgingComponent = 0;
         double yNudgingComponent = 0;
         switch (pDirection) {
@@ -582,6 +625,8 @@ public class SwerveDrive
         } 
 
         nudgeSpeed *=  pNudgeSpeedMultiplier;
+        nudgeSpeed *= CalculateNudgeAccelerationMultiplier(mTimeThatCurrentNudgingStarted, System.currentTimeMillis());
+
         CalculateAndApplyModuleStatesForSwerveInput(xNudgingComponent, yNudgingComponent, nudgeSpeed, 0, DrivingStyle.ROBOT_RELATIVE);
     
     }
@@ -646,8 +691,10 @@ public class SwerveDrive
         }
     }
 
+
     public void StopEverything()
     {
+        mLastSwerveNudgingDirection = SwerveNudgingDirection.NONE;
         for(int i = 0; i < mWheels.length; i++)
         {
             mWheels[i].StopEverything();
@@ -675,10 +722,13 @@ public class SwerveDrive
     //This method is intended to be called by Choreo
     public void Run(double pXTranslationMetersPerSecond, double pYTranslationMetersPerSecond, double pRotationSpeed )
     {
+        mLastSwerveNudgingDirection = SwerveNudgingDirection.NONE;
+        /*
         SmartDashboard.putNumber("ChoreoCommand_timeStamp", System.currentTimeMillis());
         SmartDashboard.putNumber("Choreo_pXTranslationMetersPerSecond", pXTranslationMetersPerSecond);
         SmartDashboard.putNumber("Choreo_pYTranslationMetersPerSecond", pYTranslationMetersPerSecond);
         SmartDashboard.putNumber("Choreo_pRotationSpeed", pRotationSpeed);
+        */
          SwerveModuleState[] targetModelStates = CalculateModuleTargetStates(
             Conversions.MetersPerSecondToInchesPerSecond(pYTranslationMetersPerSecond),
             Conversions.MetersPerSecondToInchesPerSecond(pXTranslationMetersPerSecond), 
@@ -720,6 +770,8 @@ public class SwerveDrive
         SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
         if(nudgingDirection == SwerveNudgingDirection.NONE)
         {
+            mLastSwerveNudgingDirection = SwerveNudgingDirection.NONE;
+
             double rotation = pControls.GetSwerveRotationalSpeed();
             if(Math.abs(rotation) < 0.10)
             {
@@ -754,6 +806,8 @@ public class SwerveDrive
         SwerveNudgingDirection nudgingDirection = pControls.GetSwerveNudgingDirection();
         if(nudgingDirection == SwerveNudgingDirection.NONE)
         {
+            mLastSwerveNudgingDirection = SwerveNudgingDirection.NONE;
+
             double rotation = pControls.GetSwerveRotationalSpeed();
             if(Math.abs(rotation) < 0.10)
             {

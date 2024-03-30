@@ -15,6 +15,7 @@ import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
 import robosystems.Lights;
+import robosystems.RobotMode;
 import robosystems.Shooter;
 import robotcode.autonomous.AutonomousRoutine;
 
@@ -144,17 +145,27 @@ public class Robot extends TimedRobot
   {
     int currentIndex = 0;
     robotcode.autonomous.RoutineFactory routineFactory = new robotcode.autonomous.RoutineFactory(mSwerveDrive, mShooter, mIntake);
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "PlayoffsA", routineFactory.PlayoffsA()));
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "SourceSideCrazierModeUnderStage", routineFactory.SourceSideCrazierModeUnderStage()));
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Shoot Close To Stage Close To Source Side", routineFactory.ShootCloseToStageCloseToSourceSide()));
+    
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Five Close Rings Shifted", routineFactory.FiveCloseRingTopMiddleAutoShifted()));
     
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Four Close Rings", routineFactory.FourCloseRingAuto()));
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "SimpleTestPath", routineFactory.SimpleTestPath()));
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "PlayoffsA", routineFactory.PlayoffsA()));
+    
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Amp Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Shoot Close To Stage Close To Source Side", routineFactory.ShootCloseToStageCloseToSourceSide()));
+    
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Avoidance Shoot Close To Stage Close To Source Side", routineFactory.AvoidanceShootCloseToStageCloseToSourceSide()));
     
   }
 
 
-  private boolean mLoggingEnabled = true;
+  private boolean mLoggingEnabled = false;
   private boolean mLastLoggingEnabledTogglePressed = false;
 
   private void checkLoggingEnabledToggle()
@@ -177,11 +188,12 @@ public class Robot extends TimedRobot
 
     if(mLoggingEnabled)
     {
+      //mClimberArms.logArms();
       //SmartDashboard.putNumber("Logging At", System.currentTimeMillis());
-      mLimelightManager.logLimelightInfo();
+      //mLimelightManager.logLimelightInfo();
       
-      //mShooter.logShooterInformation();
-      //mStateMachine.log();
+      mShooter.logShooterInformation();
+      mStateMachine.log();
       //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
@@ -222,7 +234,8 @@ public class Robot extends TimedRobot
 
     }
 
-    mLimelightManager.calculateCameraPoseTargetSpace();
+    //ATS I don't think we're using this at all any more
+    //mLimelightManager.calculateCameraPoseTargetSpace();
     mLimelightManager.calculateBotpose();    
 
     checkLoggingEnabledToggle();
@@ -251,7 +264,9 @@ public class Robot extends TimedRobot
     mAutonomousRoutine = mAutonomousRoutines.get(mAutoModeSelection).GetRoutine();
     mAutonomousStartTime = System.currentTimeMillis();
   
-    
+    mShooter.ConfigureShooterMotorsForGameMode(RobotMode.AUTONOMOUS);
+    mSwerveDrive.ConfigureDriveMotorsForGameMode(true);
+    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
   }
 
   /** This function is called periodically during autonomous. */
@@ -264,12 +279,13 @@ public class Robot extends TimedRobot
     }
     try
     {
-      mAutonomousRoutine.Run();
+    mAutonomousRoutine.Run();
     }
     catch (Exception e)
     {
       SmartDashboard.putString("error", e.getLocalizedMessage());
     }
+    SmartDashboard.putString("Alliance Info", AllianceInfo.GetInstance().GetName());
     //SmartDashboard.putNumber("AutonomousElapsedTime",System.currentTimeMillis() -  mAutonomousStartTime );
   }
 
@@ -291,9 +307,11 @@ public class Robot extends TimedRobot
       SmartDashboard.putString("OurAllianceInfo", e.getMessage());
     }
 
-    //AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
-
     mShooter.SetAnglerLimitSwitchesEnabledOrDisabled(true);
+
+    mShooter.ConfigureShooterMotorsForGameMode(RobotMode.TELEOPERATED);
+    mSwerveDrive.ConfigureDriveMotorsForGameMode(false);
+    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
   }
   
 
@@ -545,6 +563,9 @@ public class Robot extends TimedRobot
     mShooter.SetAnglerLimitSwitchesEnabledOrDisabled(false);
     mSwerveDrive.InitializeOdometry();
 
+    mShooter.ConfigureShooterMotorsForGameMode(RobotMode.TELEOPERATED);
+    mSwerveDrive.ConfigureDriveMotorsForGameMode(false);
+
   }
 
 
@@ -703,6 +724,46 @@ public class Robot extends TimedRobot
     }
   }
 
+
+
+  public void testAnglerAndEtc()
+  {
+
+    double angleChange = (mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis()) / 10.0;
+    mTestOnlyAnlgerTracker += angleChange;
+    mShooter.setAngle(mTestOnlyAnlgerTracker);
+
+    int pov = mMainController.getPOV(); 
+    
+    if(Math.abs(pov - 0.0) < 0.1)
+    {
+      mExtendoTargetPosition -= 1.0;
+    } 
+    else if(Math.abs(pov - 180.0) < 0.1)
+    {
+      mExtendoTargetPosition += 1.0;
+    }
+
+    mExtendoArm.goToPosition(mExtendoTargetPosition);
+
+    if( Math.abs(mMainController.getLeftY()) > 0.07)
+    {
+      mTestOnlyShooterSpeed += -1.0 * mMainController.getLeftY() / 100;
+    }
+    mShooter.setSpeed(mTestOnlyShooterSpeed, mTestOnlyShooterSpeed * 0.75);
+    
+    
+    if(mMainController.getRightStickButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+  }
+
   public void testPeriodic()
   {    
     //testTrapMechanism();
@@ -712,11 +773,34 @@ public class Robot extends TimedRobot
     //TestClimberPID();
     // testSpinnyTrapShot();
     //shootySpinnyTrapTest();
-    //RealTestMode();
-    testBlower();
+    // RealTestMode(); 
+    // testBlower();
     //testShooterSpeed();
     //testBottomShooterSpeed();
+    // testAnglerAndEtc();
+    testShooterAnglerPID();
     
+  }
+
+  private void testShooterAnglerPID()
+  {
+      if(mMainController.getAButton())
+      {
+        mShooter.setAngle(Constants.INTAKING_ANGLE);
+      }
+      else if(mMainController.getBButton())
+      {
+        mShooter.setAngle(Constants.LOW_GOAL_ANGLE);
+      }
+      else if(mMainController.getXButton())
+      {
+        mShooter.setAngle(Constants.HIGH_GOAL_ANGLE);
+      }
+      else
+      {
+        mShooter.stopAnglerMotor();
+      }
+
   }
 
   private void testBlower()
@@ -724,6 +808,7 @@ public class Robot extends TimedRobot
     this.mIntake.TestSetTrapIntakeSpeed(1);
   }
 
+ 
 
   private boolean mTestHasBegun = false;
   private boolean mReachedMilestoneA= false;

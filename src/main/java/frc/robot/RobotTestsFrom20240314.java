@@ -159,7 +159,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
 
   public void robotPeriodic()
   {
-    mLimelightManager.calculateCameraPoseTargetSpace();
+    //mLimelightManager.calculateCameraPoseTargetSpace();
     mLimelightManager.calculateBotpose();
     //logLimelightInfo();
     mShooter.logShooterInformation();

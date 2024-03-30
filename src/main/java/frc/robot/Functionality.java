@@ -6,8 +6,10 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import robosystems.ClimberArms;
 import states.Controls;
 import states.ShooterMode;
+import states.ClimbingModeManager.ClimbingMode;
 
 public class Functionality {
     public static void configureSparkMaxCustomizable(CANSparkMax pSparkMax, int pCurrentLimit, double pOpenLoopRampRate)
@@ -80,6 +82,23 @@ public class Functionality {
         return returnValue;
     }
 
+
+    public static void setArmsBasedOnClimberMode(ClimbingMode pClimbingMode, ClimberArms pClimberArms)
+    {
+        if (pClimbingMode == ClimbingMode.Off)
+        {
+            return;
+        }
+        if (pClimbingMode == ClimbingMode.Extending)
+        {
+            pClimberArms.extend();
+            return;
+        }
+        if (pClimbingMode == ClimbingMode.Retracting)
+        {
+            pClimberArms.retract();
+        }
+    }
     
 
     

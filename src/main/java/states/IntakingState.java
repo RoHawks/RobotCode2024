@@ -7,6 +7,7 @@ import frc.robot.Constants;
 import frc.robot.Functionality;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
+import states.ClimbingModeManager.ClimbingMode;
 import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
@@ -42,7 +43,7 @@ public class IntakingState extends AState {
             mShooter = pShooter;
             mExtendoArm = pExtendoArm;
             mControls = pControls;   
-            mShooterMode = ShooterMode.HighGoalDriveBy;
+            mShooterMode = ShooterMode.AutoAim;//ATS, default to auto aim now ShooterMode.HighGoalDriveBy;
             mLights = pLights;
             mClimberArms = pClimberArms;
         }
@@ -57,7 +58,10 @@ public class IntakingState extends AState {
     private void basicContinousActions()
     {
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
-        mClimberArms.retract();
+        ClimbingModeManager.determineClimbingMode(mControls);
+        
+        Functionality.setArmsBasedOnClimberMode(ClimbingModeManager.getClimbingMode(), mClimberArms);
+
         mSwerveDrive.Run(mControls);
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0,0);
@@ -104,11 +108,14 @@ public class IntakingState extends AState {
         {
             return new NextStateInfo(States.Ejecting, mShooterMode);
         }
-        else if (mControls.GetPrepareToClimb())
+        
+        if (mControls.GetRetractClimb() && ClimbingModeManager.getClimbingMode() == ClimbingMode.Extending)
         {
-            return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
+            return new NextStateInfo(States.Climbing, mShooterMode);
         }
-        else if (mIntake.getBreakBeamStatus())
+
+
+        if (mIntake.getBreakBeamStatus())
         {
             mIntake.recordPositionAtBreakBeam();
             return new NextStateInfo(States.Holding, mShooterMode);

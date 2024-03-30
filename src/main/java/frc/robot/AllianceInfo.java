@@ -55,6 +55,7 @@ public class AllianceInfo
 
     public void OverrideAllianceForTestingPurposes(Alliance pAlliance)
     {
+        
         mAlliance = pAlliance;
     }
 

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import edu.wpi.first.math.Pair;
 import robosystems.Intake;
 import robosystems.Shooter;
+import robotcode.autonomous.steps.WaitAction;
 import universalSwerve.SwerveDrive;
 
 
@@ -12,9 +13,23 @@ public class RoutineFactory
 {
     private StepFactory mStepFactory;
 
+    ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+    static{
+
+
+    }
+        
+
     public RoutineFactory(SwerveDrive pSwerveDrive, Shooter pShooter, Intake pIntake)
     {
         mStepFactory = new StepFactory(pSwerveDrive, pShooter, pIntake);    }
+
+    public AutonomousRoutine SimpleTestPath()
+    {
+        AutonomousRoutine returnValue = new AutonomousRoutine("SimpleTestPath");
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("SimpleTurn.1", 36));
+        return returnValue;
+    }
 
     public AutonomousRoutine FourCloseRingAuto()
     {
@@ -27,11 +42,72 @@ public class RoutineFactory
 
         ArrayList<Pair<Double,Long>> listOfPairs = new ArrayList<>();
         listOfPairs.add(new Pair<Double,Long>(27.0, 1250l));
-        listOfPairs.add(new Pair<Double,Long>(30.0, 4000l));
+        listOfPairs.add(new Pair<Double,Long>(30.0, 2500l));
         listOfPairs.add(new Pair<Double,Long>(21.0, 100000l));
     
 
         returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("4CloseRingAuto.2", listOfPairs));
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+
+    }
+
+    public AutonomousRoutine FiveCloseRingTopMiddleAuto()
+    {
+        double initialAngle = 36;
+        double instaShootAngle = 25;
+        AutonomousRoutine returnValue = new AutonomousRoutine("FiveCloseRingTopMiddleAuto");
+        //returnValue.AddStep(mStepFactory.CreateGameStartStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("FiveCloseRingTopMiddleAuto.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> listOfPairs = new ArrayList<>();
+        listOfPairs.add(new Pair<Double,Long>(27.0, 1250l));
+        listOfPairs.add(new Pair<Double,Long>(30.0, 2500l));
+        listOfPairs.add(new Pair<Double,Long>(21.0, 100000l));
+    
+
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("FiveCloseRingTopMiddleAuto.2", listOfPairs));
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(27.0, 100000l));
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("FiveCloseRingTopMiddleAuto.3", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+        
+        returnValue.AddStep(mStepFactory.CreateFinishStep());
+        
+        return returnValue;
+
+    }
+
+
+    public AutonomousRoutine FiveCloseRingTopMiddleAutoShifted()
+    {
+        double initialAngle = 36;
+        double instaShootAngle = 25;
+        AutonomousRoutine returnValue = new AutonomousRoutine("FiveCloseRingTopMiddleAutoShifted");
+        //returnValue.AddStep(mStepFactory.CreateGameStartStep());
+        returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("FiveCloseRingTopMiddleAutoShifted.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+
+        ArrayList<Pair<Double,Long>> listOfPairs = new ArrayList<>();
+        listOfPairs.add(new Pair<Double,Long>(27.0, 1250l));
+        listOfPairs.add(new Pair<Double,Long>(30.0, 2500l));
+        listOfPairs.add(new Pair<Double,Long>(21.0, 100000l));
+    
+
+        returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("FiveCloseRingTopMiddleAutoShifted.2", listOfPairs));
+
+        ArrayList<Pair<Double,Long>> unknownAmpSideAngle = new ArrayList<>();
+        unknownAmpSideAngle.add(new Pair<Double,Long>(6.0, 100000l));
+
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "FiveCloseRingTopMiddleAutoShifted.3", null, unknownAmpSideAngle));
+        returnValue.AddStep(mStepFactory.CreateWaitStep(300l));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
+        
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;
@@ -53,6 +129,8 @@ public class RoutineFactory
         ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>();
         thirtySixDegrees.add(new Pair<Double,Long>(36.0, 100000l));
         
+        
+
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("OnLeftTwoNotePlusMidfield.3", null, thirtySixDegrees));
         returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("OnLeftTwoNotePlusMidfield.4", null, eightTeenDegrees));
@@ -75,12 +153,14 @@ public class RoutineFactory
         eightTeenDegrees.add(new Pair<Double,Long>(18.0, 100000l));
         returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("ShootCloseToStageCloseToSourceSide.2", eightTeenDegrees));
         
-        ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>();
-        thirtySixDegrees.add(new Pair<Double,Long>(36.0, 100000l));
+        ArrayList<Pair<Double,Long>> secondAngle = new ArrayList<>();
+        secondAngle.add(new Pair<Double,Long>(39.0, 100000l));
         
-        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.3", null, secondAngle));
         returnValue.AddStep(mStepFactory.CreateShootStep());
-        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
+        ArrayList<Pair<Double,Long>> finalShotAngle = new ArrayList<>(); // completely irrelevant 
+        finalShotAngle.add(new Pair<Double,Long>(30.0, 100000l));
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("ShootCloseToStageCloseToSourceSide.4", null, finalShotAngle));
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;
@@ -103,7 +183,8 @@ public class RoutineFactory
         ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>();
         thirtySixDegrees.add(new Pair<Double,Long>(36.0, 100000l));
         
-        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
+        returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
+            "AvoidanceShootCloseToStageCloseToSourceSide.3", null, thirtySixDegrees));
         returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("AvoidanceShootCloseToStageCloseToSourceSide.4", null, eightTeenDegrees));
         returnValue.AddStep(mStepFactory.CreateFinishStep());
@@ -145,19 +226,21 @@ public class RoutineFactory
 
     public AutonomousRoutine SourceSideCrazierModeUnderStage()
     {
-        double initialAngle = 34;
+        double initialAngle = 14;
         AutonomousRoutine returnValue = new AutonomousRoutine("SourceSideCrazierModeUnderStage");
         //to let shooter wheels warm up
-        returnValue.AddStep(mStepFactory.CreateWaitStep(500l));
+        
         
         returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("SourceSideCrazierModeUnderStage.1", initialAngle));
+        returnValue.AddStep(mStepFactory.CreateWaitStep(500l));
         returnValue.AddStep(mStepFactory.CreateShootStep());
 
         ArrayList<Pair<Double,Long>> unknownUnderStageAngle = new ArrayList<>();
-        unknownUnderStageAngle.add(new Pair<Double,Long>(27.0, 100000l));
+        unknownUnderStageAngle.add(new Pair<Double,Long>(13.0, 100000l));
         
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
             "SourceSideCrazierModeUnderStage.2", null, unknownUnderStageAngle));
+        returnValue.AddStep(mStepFactory.CreateWaitStep(300l));
         returnValue.AddStep(mStepFactory.CreateShootStep());
  
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
@@ -166,6 +249,7 @@ public class RoutineFactory
 
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold(
             "SourceSideCrazierModeUnderStage.4", null, unknownUnderStageAngle));
+        returnValue.AddStep(mStepFactory.CreateShootStep());
         returnValue.AddStep(mStepFactory.CreateFinishStep());
         
         return returnValue;
@@ -291,7 +375,7 @@ public class RoutineFactory
 
     public AutonomousRoutine PlayoffsA()
     {
-        double initialAngle = 31;
+        double initialAngle = 14;
         AutonomousRoutine returnValue = new AutonomousRoutine("PlayoffsA");
         //returnValue.AddStep(mStepFactory.CreateGameStartStep());
         returnValue.AddStep(mStepFactory.CreateFollowPathAndWarmShooterStep("PlayoffsA.1", initialAngle));
@@ -303,7 +387,7 @@ public class RoutineFactory
         // returnValue.AddStep(mStepFactory.CreateFollowTrajectoryAndInstaShootStep("PlayoffsA.2", eightTeenDegrees));
         
         ArrayList<Pair<Double,Long>> thirtySixDegrees = new ArrayList<>(); // NEEDS ADJUSTMENT
-        thirtySixDegrees.add(new Pair<Double,Long>(24.5, 100000l));
+        thirtySixDegrees.add(new Pair<Double,Long>(14.0, 100000l));
         
         returnValue.AddStep(mStepFactory.CreateFollowPathThenIntakePieceAndHold("PlayoffsA.2", null, thirtySixDegrees));
         returnValue.AddStep(mStepFactory.CreateShootStep());

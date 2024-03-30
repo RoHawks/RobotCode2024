@@ -88,7 +88,9 @@ public class JoystickControlsWithSwerve implements Controls {
     {
         //Let's try squaring this for finer grained slowcontrol
         double rawVal = mMainController.getRightX();
-        return rawVal > 0 ? rawVal * rawVal : -1.0 * rawVal * rawVal; 
+        //ATS, we're going to double this to NYC!
+        //return rawVal > 0 ? rawVal * rawVal : -1.0 * rawVal * rawVal; 
+        return 2.0 * ( rawVal > 0 ? rawVal * rawVal : -1.0 * rawVal * rawVal); 
     }
 
 

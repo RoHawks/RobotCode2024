@@ -41,6 +41,11 @@ public class Wheel
 
     }
 
+    public void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous)
+    {
+        mTranslationSystem.ConfigureDriveMotorsForGameMode(pIsAutonomous);
+    }
+
     public void SetWheelMode(WheelMode pWheelMode)
     {
         mWheelMode = pWheelMode;

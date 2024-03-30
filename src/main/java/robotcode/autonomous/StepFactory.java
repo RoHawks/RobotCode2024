@@ -47,7 +47,7 @@ public class StepFactory
     public Step CreateShootStep()
     {
         Step returnValue = new Step("ShootStep");
-        returnValue.AddAction(new ShootAction(mShooter, mIntake, false));        
+        returnValue.AddAction(new ShootAction(mShooter, mIntake, false, mSwerveDrive));        
         return returnValue;
     }
     
@@ -64,7 +64,7 @@ public class StepFactory
         
         returnValue.AddAction(new GoToShooterAngleAction(mShooter, pairsOfAnglesAndTimes));
         returnValue.AddAction(new FollowTrajectoryAction(pTrajectoryName, mSwerveDrive, false, mIntake, true));
-        returnValue.AddAction(new ShootAction(mShooter, mIntake, true));    
+        returnValue.AddAction(new ShootAction(mShooter, mIntake, true, mSwerveDrive));    
         return returnValue;
     }
 

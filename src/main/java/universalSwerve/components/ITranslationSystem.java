@@ -21,5 +21,6 @@ public interface ITranslationSystem {
     double GetPercentOutput();
     double GetCurrentDraw();
 
+    void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous);
     
 }

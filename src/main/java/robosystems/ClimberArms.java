@@ -21,12 +21,14 @@ public class ClimberArms
   private TalonFX mRightDrumMotor;
 
 
-  private double EXTEND_TARGET_POSITION = Constants.EXTEND_TARGET_POSITION; //228
+  private double RIGHT_EXTEND_TARGET_POSITION = Constants.RIGHT_EXTEND_TARGET_POSITION; 
+  private double LEFT_EXTEND_TARGET_POSITION = Constants.LEFT_EXTEND_TARGET_POSITION; 
   private double RETRACT_TARGET_POSITION = Constants.RETRACT_TARGET_POSITION;
   
   private final PositionVoltage mPositionVoltage = new PositionVoltage(0, 0, true, 0, 0, false, false, false);
   
-  private double mLastTargetPosition = 0;
+  private double mLeftLastTargetPosition = 0;
+  private double mRightLastTargetPosition = 0;
 
   // Constructor
   public ClimberArms() {
@@ -39,12 +41,12 @@ public class ClimberArms
 
       SoftwareLimitSwitchConfigs softLimitConfigsLeft = new SoftwareLimitSwitchConfigs();
       softLimitConfigsLeft.ForwardSoftLimitEnable = true;
-      softLimitConfigsLeft.ForwardSoftLimitThreshold = 315;      
+      softLimitConfigsLeft.ForwardSoftLimitThreshold = 312;      
       mLeftDrumMotor.getConfigurator().apply(softLimitConfigsLeft);
 
       SoftwareLimitSwitchConfigs softLimitConfigsRight = new SoftwareLimitSwitchConfigs();
       softLimitConfigsRight.ReverseSoftLimitEnable = true;
-      softLimitConfigsRight.ReverseSoftLimitThreshold = -315;
+      softLimitConfigsRight.ReverseSoftLimitThreshold = -328;
       mRightDrumMotor.getConfigurator().apply(softLimitConfigsRight);
 
   }
@@ -94,13 +96,15 @@ public class ClimberArms
   // Extends arms until both reach EXTEND_TARGET_POSITION
 
   private final double rightModifier = -1.0;
-  public void goToPosition(double pPosition)
+  public void goToPosition(double pLeftPosition, double pRightPosition)
   {
-    mLeftDrumMotor.setControl(mPositionVoltage.withPosition(pPosition));
-    mRightDrumMotor.setControl(mPositionVoltage.withPosition(pPosition * rightModifier));
+    mLeftDrumMotor.setControl(mPositionVoltage.withPosition(pLeftPosition));
+    mRightDrumMotor.setControl(mPositionVoltage.withPosition(pRightPosition * rightModifier));
    
    
-    mLastTargetPosition = pPosition;
+    mLeftLastTargetPosition = pLeftPosition;
+    mRightLastTargetPosition = pRightPosition;
+    
   }
 
   /*
@@ -135,9 +139,9 @@ public class ClimberArms
 
   public boolean extend() {
 
-      goToPosition(EXTEND_TARGET_POSITION);
+      goToPosition(LEFT_EXTEND_TARGET_POSITION, RIGHT_EXTEND_TARGET_POSITION);
 
-      if(isArmCloseEnough(mLeftDrumMotor, EXTEND_TARGET_POSITION) && isArmCloseEnough(mRightDrumMotor, EXTEND_TARGET_POSITION * rightModifier)){
+      if(isArmCloseEnough(mLeftDrumMotor, LEFT_EXTEND_TARGET_POSITION) && isArmCloseEnough(mRightDrumMotor, RIGHT_EXTEND_TARGET_POSITION * rightModifier)){
         return true;
       }else{
         return false;
@@ -146,7 +150,7 @@ public class ClimberArms
 
   // Retracts arms until both reach RETRACT_TARGET_POSITION
   public boolean retract() {
-      goToPosition(RETRACT_TARGET_POSITION);
+      goToPosition(RETRACT_TARGET_POSITION,RETRACT_TARGET_POSITION);
 
       if(isArmCloseEnough(mLeftDrumMotor, RETRACT_TARGET_POSITION) && isArmCloseEnough(mRightDrumMotor, RETRACT_TARGET_POSITION * rightModifier)){
         return true;
@@ -160,7 +164,8 @@ public class ClimberArms
   {
     logArm("LeftArm", mLeftDrumMotor);
     logArm("RightArm", mRightDrumMotor);
-    SmartDashboard.putNumber("BothArms-TargetPosition", mLastTargetPosition);
+    SmartDashboard.putNumber("LeftArm-TargetPosition", mLeftLastTargetPosition);
+    SmartDashboard.putNumber("RightArm-TargetPosition", mRightLastTargetPosition);
   }
 
   private void logArm(String pPrefix, TalonFX pMotor)

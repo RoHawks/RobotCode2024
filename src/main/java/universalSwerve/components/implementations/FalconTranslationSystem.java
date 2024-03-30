@@ -30,6 +30,12 @@ public class FalconTranslationSystem implements ITranslationSystem{
         mGearRatio = pGearRatio;
     }
 
+    
+    @Override
+    public void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous) {
+       throw new RuntimeException("ConfigureDriveMotorsForGameMode not implemented");
+    }
+
     @Override
     public void Initialize() {
 

@@ -25,6 +25,12 @@ public class TalonSRXOpenLoopTranslationSystem implements ITranslationSystem{
             mWheelDiameter = pWheelDiameter;
     }
 
+        
+    @Override
+    public void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous) {
+       throw new RuntimeException("ConfigureDriveMotorsForGameMode not implemented");
+    }
+
     @Override
     public void Initialize() {
      

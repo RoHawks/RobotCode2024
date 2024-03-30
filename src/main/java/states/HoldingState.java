@@ -8,6 +8,7 @@ import frc.robot.Functionality;
 import frc.robot.LimelightInformation;
 import frc.robot.LimelightManager;
 import robosystems.Shooter;
+import states.ClimbingModeManager.ClimbingMode;
 import robosystems.Lights.LightingScheme;
 import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
@@ -95,10 +96,11 @@ public class HoldingState extends AState {
     private void basicContinousActions()
     {
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
+        ClimbingModeManager.determineClimbingMode(mControls);
         // logHoldingStateValues();
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
         mExtendoArm.retract();
-        mClimberArms.retract();
+        Functionality.setArmsBasedOnClimberMode(ClimbingModeManager.getClimbingMode(), mClimberArms);
         mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
         //mShooter.logShooterInformation();
         mShooter.setAngleBasedOnShooterMode(mShooterMode);
@@ -222,9 +224,9 @@ public class HoldingState extends AState {
         }
 
 
-        if (mControls.GetPrepareToClimb())
+        if (mControls.GetRetractClimb() && ClimbingModeManager.getClimbingMode() == ClimbingMode.Extending)
         {
-            return new NextStateInfo(States.ClimbingPreparation, mShooterMode);
+            return new NextStateInfo(States.Climbing, mShooterMode);
         }
 
 

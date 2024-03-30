@@ -16,8 +16,13 @@ import universalSwerve.utilities.PIDFConfiguration;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder;
 
+import robosystems.RobotMode;
+
+
 public class SwerveFactory 
 {
+
+
      public static SwerveDrive Create2024Swerve()
     {        
 
@@ -77,7 +82,7 @@ public class SwerveFactory
 
         CurrentLimitsConfigs driveCurrentLimitConfig = new CurrentLimitsConfigs();
         driveCurrentLimitConfig.SupplyCurrentLimit = 30;
-        driveCurrentLimitConfig.SupplyCurrentThreshold = 31;//ats this was 60 and is meaningles as such
+        driveCurrentLimitConfig.SupplyCurrentThreshold = 31;
         driveCurrentLimitConfig.SupplyTimeThreshold = 0.04;
         driveCurrentLimitConfig.SupplyCurrentLimitEnable = true;
         
@@ -101,12 +106,7 @@ public class SwerveFactory
         class DriveFalconCreator { TalonFX CreateDriveFalcon(int pDriveChannel) 
             { 
                 TalonFX returnValue = new TalonFX(pDriveChannel);
-                returnValue.getConfigurator().apply(driveCurrentLimitConfig);                                
-                /*
-                returnValue.getConfigurator().apply(driveMotorOutputConfig);                
-                returnValue.getConfigurator().apply(driveMotorfeedbackConfigs);                
-                returnValue.getConfigurator().apply(driveMotorClosedLoopRampConfigs);
-                */
+                returnValue.getConfigurator().apply(TalonFXTranslationSystem.GetCurrentLimitsConfigs_2024(false));                                
                 
                 returnValue.setInverted(false);
                                                 

@@ -7,6 +7,7 @@ import javax.swing.text.html.FormSubmitEvent.MethodType;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -17,6 +18,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import robosystems.RobotMode;
 import universalSwerve.components.ITranslationSystem;
 import universalSwerve.utilities.Conversions;
 import universalSwerve.utilities.PIDFConfiguration;
@@ -31,6 +33,34 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     private final VelocityVoltage mVoltageVelocity = new VelocityVoltage(0, 0, true, 0, 0, true, false, false);
     private final VelocityDutyCycle mVelocityDutyCycle = new VelocityDutyCycle(0, 0, true, 0, 0, true, false, false);
   
+
+    public static CurrentLimitsConfigs GetCurrentLimitsConfigs_2024(boolean pIsAutonomous)
+    {
+        CurrentLimitsConfigs returnValue = new CurrentLimitsConfigs();
+        if(pIsAutonomous)
+        {
+            returnValue.SupplyCurrentLimit = 45;
+            returnValue.SupplyCurrentThreshold = 90;
+            returnValue.SupplyTimeThreshold = 0.1;
+            returnValue.SupplyCurrentLimitEnable = true;
+        }
+        else
+        {
+            returnValue.SupplyCurrentLimit = 30;
+            returnValue.SupplyCurrentThreshold = 31;
+            returnValue.SupplyTimeThreshold = 0.04;
+            returnValue.SupplyCurrentLimitEnable = true;
+        }
+        return returnValue;
+            
+        
+    }
+
+
+    @Override
+    public void ConfigureDriveMotorsForGameMode(boolean pIsAutonomous) {
+       mFalcon.getConfigurator().apply(GetCurrentLimitsConfigs_2024(pIsAutonomous));
+    }
 
 
     /*
@@ -183,4 +213,6 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
     {
         return mFalcon.getSupplyCurrent().getValueAsDouble();
     }
+
+
 }

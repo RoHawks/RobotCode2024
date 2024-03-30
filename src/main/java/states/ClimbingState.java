@@ -6,6 +6,7 @@ import com.revrobotics.CANSparkFlex;
 import robosystems.ClimberArms;
 import robosystems.Intake;
 import robosystems.Shooter;
+import states.ClimbingModeManager.ClimbingMode;
 import universalSwerve.SwerveDrive;
 
 public class ClimbingState extends AState
@@ -50,9 +51,10 @@ public class ClimbingState extends AState
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
+        ClimbingModeManager.determineClimbingMode(mControls);
         if (mControls.GetPrepareToClimb())
         {
-            return new NextStateInfo(States.ClimbingPreparation, mEntryParameter);
+            return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
         if(mFinishedRetracting){

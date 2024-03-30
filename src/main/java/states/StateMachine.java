@@ -33,9 +33,6 @@ public class StateMachine
         ClimbingState climbingState = new ClimbingState(pSwerveDrive, pClimberArms, pShooter, pIntake, pControls);
         mStates.put(climbingState.GetState(), climbingState);
 
-        ClimbingPreparationState climbingPreparationState = new ClimbingPreparationState(pSwerveDrive, pClimberArms, pShooter, pControls, pIntake);
-        mStates.put(climbingPreparationState.GetState(), climbingPreparationState);
-
         EjectingState ejectingState = new EjectingState(pSwerveDrive, pIntake, pShooter, pExtendoArm, pControls, pLights, pClimberArms);
         mStates.put(ejectingState.GetState(), ejectingState);
         

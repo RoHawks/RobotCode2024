@@ -9,6 +9,7 @@ import frc.robot.LimelightInformation;
 import frc.robot.LimelightManager;
 import robosystems.Shooter;
 import robosystems.Lights.LightingScheme;
+import states.ClimbingModeManager.ClimbingMode;
 import robosystems.ClimberArms;
 import robosystems.ExtendoArm;
 import robosystems.Intake;
@@ -97,10 +98,10 @@ public class ShootingState extends AState {
 
     private void basicContinousActions(ChassisSpeeds pChassisSpeeds)
     {
-        mClimberArms.retract();
+        Functionality.setArmsBasedOnClimberMode(ClimbingModeManager.getClimbingMode(), mClimberArms);
         // logShootingStateInformation();
         SmartDashboard.putString("ShooterMode", mShooterMode.name());
-
+        ClimbingModeManager.determineClimbingMode(mControls);
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
         
         mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
@@ -130,6 +131,9 @@ public class ShootingState extends AState {
     private boolean isFirstTimeRunningAutoAimCalculations = true;
     private double mRecordedTurningAngle = 0;
     private double mTimeWhenCloseEnough = -1;
+
+    public static boolean TECH_VALLEY_AUTO_SHOOTING_VERSION = false;
+    private int mReAimCount = 0;
 
     @Override
     public NextStateInfo Run() {
@@ -171,46 +175,135 @@ public class ShootingState extends AState {
         boolean autoShootingConditionsMet = false;
         if (mShooterMode == ShooterMode.AutoAim)
         {
-            
-            double gyroAngle = AngleUtilities.Normalize(mSwerveDrive.GetGyroscopeCurrentAngle()); 
-            
-            SmartDashboard.putNumber("mRecordedTurningAngle", mRecordedTurningAngle);
-            SmartDashboard.putNumber("gyroAngle", gyroAngle);
-            
-            boolean closeEnough = Math.abs(gyroAngle - mRecordedTurningAngle) < 7;
+            if(TECH_VALLEY_AUTO_SHOOTING_VERSION)
+            {
+                double gyroAngle = AngleUtilities.Normalize(mSwerveDrive.GetGyroscopeCurrentAngle()); 
+                
+                SmartDashboard.putNumber("mRecordedTurningAngle", mRecordedTurningAngle);
+                SmartDashboard.putNumber("gyroAngle", gyroAngle);
+                
+                boolean closeEnough = AngleUtilities.AbsoluteDistanceBetweenAngles(gyroAngle, mRecordedTurningAngle) < 7;
 
-            if (closeEnough && mTimeWhenCloseEnough < 0)
-            {
-                SmartDashboard.putNumber("AutoLogs Before: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
-                mTimeWhenCloseEnough = System.currentTimeMillis();
-            }
-            else if (!closeEnough)
-            {
-                mTimeWhenCloseEnough = -1;
-            }
+                if (closeEnough && mTimeWhenCloseEnough < 0)
+                {
+                    SmartDashboard.putNumber("AutoLogs Before: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
+                    mTimeWhenCloseEnough = System.currentTimeMillis();
+                }
+                else if (!closeEnough)
+                {
+                    mTimeWhenCloseEnough = -1;
+                }
 
-            SmartDashboard.putNumber("AutoLogs: mTimeWhenCloseEnough Difference", System.currentTimeMillis() -  mTimeWhenCloseEnough);
-            SmartDashboard.putNumber("AutoLogs After: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
-            SmartDashboard.putBoolean("AutoLogs: AnglerCloseEnough", mShooter.checkIfAnglerIsCloseEnough());
-            if (mTimeWhenCloseEnough > 0 && System.currentTimeMillis() - mTimeWhenCloseEnough > 200)//Ats was1000 changed to 200
-            {
-                // mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalManual);
-                // double angle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
-                if (mShooter.checkIfAnglerIsCloseEnough()) // gyroAngle == angle &&
+                SmartDashboard.putNumber("AutoLogs: mTimeWhenCloseEnough Difference", System.currentTimeMillis() -  mTimeWhenCloseEnough);
+                SmartDashboard.putNumber("AutoLogs After: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
+                SmartDashboard.putBoolean("AutoLogs: AnglerCloseEnough", mShooter.checkIfAnglerIsCloseEnough());
+                if (mTimeWhenCloseEnough > 0 && System.currentTimeMillis() - mTimeWhenCloseEnough > 200)//Ats was1000 changed to 200
                 {
-                    SmartDashboard.putNumber("AutoLog: is Shooting", System.currentTimeMillis());    
-                    autoShootingConditionsMet = true;
+                    // mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalManual);
+                    // double angle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+                    if (mShooter.checkIfAnglerIsCloseEnough()) // gyroAngle == angle &&
+                    {
+                        SmartDashboard.putNumber("AutoLog: is Shooting", System.currentTimeMillis());    
+                        autoShootingConditionsMet = true;
+                    }
+                    else 
+                    {
+                    // recordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+                    // angleShooterToTheAprilTag();
+                    }
                 }
-                else 
+                else
                 {
-                // recordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
-                // angleShooterToTheAprilTag();
+                    mShooter.spinUpToHighGoalSpeed();
+                    mIntake.setToHoldingSpeed();
                 }
             }
-            else
+            else //New version for NY Regional
             {
-                mShooter.spinUpToHighGoalSpeed();
-                mIntake.setToHoldingSpeed();
+                double gyroAngle = AngleUtilities.Normalize(mSwerveDrive.GetGyroscopeCurrentAngle()); 
+                
+                SmartDashboard.putNumber("mRecordedTurningAngle", mRecordedTurningAngle);
+                SmartDashboard.putNumber("gyroAngle", gyroAngle);
+                
+                boolean closeEnough = AngleUtilities.AbsoluteDistanceBetweenAngles(gyroAngle, mRecordedTurningAngle) < 7;
+                
+                
+                
+
+                if (closeEnough && mTimeWhenCloseEnough < 0)
+                {
+                    SmartDashboard.putNumber("AutoLogs Before: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
+                    mTimeWhenCloseEnough = System.currentTimeMillis();
+                }
+                else if (!closeEnough)
+                {
+                    mTimeWhenCloseEnough = -1;
+                }
+
+                SmartDashboard.putNumber("AutoLogs: mTimeWhenCloseEnough Difference", System.currentTimeMillis() -  mTimeWhenCloseEnough);
+                SmartDashboard.putNumber("AutoLogs After: mTimeWhenCloseEnough", mTimeWhenCloseEnough);
+                SmartDashboard.putBoolean("AutoLogs: AnglerCloseEnough", mShooter.checkIfAnglerIsCloseEnough());
+                if (mTimeWhenCloseEnough > 0 && System.currentTimeMillis() - mTimeWhenCloseEnough > 200)//Ats was1000 changed to 200
+                {
+                    if(mReAimCount > 0)
+                    {
+                        //I've already tried to reaim once.                          
+                        //I think just fire it!
+                        autoShootingConditionsMet = true;
+                    }
+                    else
+                    {
+                        if (mShooter.checkIfAnglerIsCloseEnough()) // gyroAngle == angle &&
+                        {
+
+                            //ATS:  We've now reached where we originally wanted to be.
+                            //But for NY, we're going to double check now to see if we are, in fact, still close enough
+                        
+                            //First lets check if we can still see the tag.
+                            double[] newCameraData = mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA);
+                            boolean canSeeTag = LimelightInformation.isValidBotPoseResults(newCameraData);
+                            if(!canSeeTag)
+                            {
+                                //We could see it when we first hit the trigger, but now we can't.... let's just go ahead and fire!
+                                autoShootingConditionsMet = true;
+                            }
+                            else
+                            {
+                                //We could see it when we pulled the trigger, 
+                                //we turned to where we think we should be
+                                //and we can still see it.  
+                                //Let's figure out if we're still close enough.
+                                mRecordedTurningAngle = this.GetGoalTurningAngle();
+                                boolean gyroSecondCheckCloseEnough = AngleUtilities.AbsoluteDistanceBetweenAngles(gyroAngle, mRecordedTurningAngle) < 7;
+                                double anglerTargetAngle = mShooter.calculateAutoAngleWithRotations_MegaTagBotPose_WithCameraPreference(LimelightManager.EAST_CAMERA);
+                                boolean anglerSecondCheckCloseEnough = mShooter.checkIfAnglerIsCloseEnough(anglerTargetAngle);
+
+                                if(gyroSecondCheckCloseEnough && anglerSecondCheckCloseEnough )
+                                {
+                                    autoShootingConditionsMet = true;
+                                }
+                                else
+                                {
+                                    mShooter.setAngle(anglerTargetAngle);
+                                    mTimeWhenCloseEnough = -1;//reset things and let's try this again.
+                                    mReAimCount++;
+                                    //Maybe put a limit to how many times we try this before just shooting???
+                                }
+                            }
+
+                        }
+                        else 
+                        {
+                        // recordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+                        // angleShooterToTheAprilTag();
+                        }
+                    }
+                }
+                else
+                {
+                    mShooter.spinUpToHighGoalSpeed();
+                    mIntake.setToHoldingSpeed();
+                }
             }
         }
         else
@@ -337,6 +430,11 @@ public class ShootingState extends AState {
         else
         {
             setExtendoArmPosition();
+        }
+
+        if (mControls.GetRetractClimb() && ClimbingModeManager.getClimbingMode() == ClimbingMode.Extending)
+        {
+            return new NextStateInfo(States.Climbing, mShooterMode);
         }
         
         if (mHasShot && System.currentTimeMillis() - mTimeStartedToShoot > timeDelay)
@@ -515,6 +613,7 @@ public class ShootingState extends AState {
         mTimeStartedToShoot = -1;
         
         mHasShot = false;
+        mReAimCount = 0;
         mShooter.ResetNonCameraAutoAimAngle();
         mControls.TurnOffVibrate();
 
@@ -535,13 +634,16 @@ public class ShootingState extends AState {
                 inAutoModeAndCouldntSeeTheTagAtTheStart = false;
             }
             
-            mRecordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+            mRecordedTurningAngle = GetGoalTurningAngle();
             SmartDashboard.putNumber("Auto Log: mRecordedTurningAngle", mRecordedTurningAngle);
         }
         
     }
 
-    
+    private double GetGoalTurningAngle()
+    {
+        return LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+    }
 
     @Override
     protected States GetState() {

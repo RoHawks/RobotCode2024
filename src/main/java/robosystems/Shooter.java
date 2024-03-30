@@ -131,11 +131,11 @@ public class Shooter{
         returnValue.setIdleMode(IdleMode.kCoast); // returnValue.setIdleMode(IdleMode.kBreak); 
         returnValue.setInverted(pIsInverted);
         returnValue.setSoftLimit(SoftLimitDirection.kForward, 190);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, 10);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, 5);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
 
-        returnValue.getPIDController().setP(0.12);
+        returnValue.getPIDController().setP(    0.5); //was 0.12 at TVR
         returnValue.getPIDController().setI(0.00);
         returnValue.getPIDController().setD(0.00);
         returnValue.getPIDController().setFF(0.00);
@@ -144,7 +144,7 @@ public class Shooter{
         mHardReverseLimitSwitch = returnValue.getReverseLimitSwitch(Type.kNormallyOpen);
         
         mHardForwardLimitSwitch.enableLimitSwitch(false);
-        mHardReverseLimitSwitch.enableLimitSwitch(false);//ATS until we fix this....
+        mHardReverseLimitSwitch.enableLimitSwitch(true);
         
         // mHardForwardLimitSwitch = returnValue.getForwardLimitSwitch(Type.kNormallyClosed);
         // mHardReverseLimitSwitch = returnValue.getReverseLimitSwiotch(Type.kNormallyClosed);
@@ -227,7 +227,13 @@ public class Shooter{
         return returnValue;
     }
     
-
+    public void ConfigureShooterMotorsForGameMode(RobotMode pMode)
+    {
+        mTopShooterRoller.getConfigurator().apply(GetClosedLoopRampsConfigs(pMode,RollerEnumeration.TOP));
+        mBottomShooterRoller.getConfigurator().apply(GetClosedLoopRampsConfigs(pMode,RollerEnumeration.BOTTOM));
+        mTopShooterRoller.getConfigurator().apply(GetCurrentLimitsConfigs(pMode,RollerEnumeration.TOP));
+        mBottomShooterRoller.getConfigurator().apply(GetCurrentLimitsConfigs(pMode,RollerEnumeration.TOP));
+    }
 
     public Shooter(LimelightManager pLimelightManager) // initialization method
     {
@@ -452,7 +458,7 @@ public class Shooter{
         SmartDashboard.putNumber("Shooter: Constant Top Shooter Speed", Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED);
         SmartDashboard.putNumber("Shooter: Constant Bottom Shooter Speed", Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
         SmartDashboard.putNumber("Shooter: Time Elapsed Since Shooter Reached Right Speed", System.currentTimeMillis() - mShooterAtRightSpeedStartingTime);
-        SmartDashboard.putNumber("Shooter: Angler Output Percentage", mAnglerMotor.getAppliedOutput());
+        SmartDashboard.putNumber("Shooter: Angler Output Percentage", mAnglerMotor.getAppliedOutput() + Math.random()/1000.0);
         SmartDashboard.putNumber("Shooter: Angler Output Current", mAnglerMotor.getOutputCurrent());
         SmartDashboard.putNumber("Shooter: Angler Current Encoder Reading", GetAnglerEncoderReading() );
         SmartDashboard.putNumber("Shooter: Angler Target Angle", mLastTargetAngle);
@@ -496,6 +502,7 @@ public class Shooter{
     //In case we very briefly lose view of the AprilTag with camera, this variable will keep track
     //of the last time we saw it, and we'll just reuse that.
     private double mLastCalculatedAutoAngleFromCamera = Constants.DEFAULT_AUTO_AIM_ANGLE;
+    
     public double calculateAutoAngle(ChassisSpeeds pChassisSpeeds)
     {
         double[] cameraPoseTargetSpace = mLimelightManager.getCameraPoseTargetSpace();
@@ -551,7 +558,7 @@ public class Shooter{
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
         return calculatedAngle;
     }
-
+    
     public double calculateAutoAngle_MegaTagBotPose(ChassisSpeeds pChassisSpeeds)
     {
         double[] botPose = mLimelightManager.getBotPoseFromCameraBasedOnChassisSpeeds(pChassisSpeeds);
@@ -600,25 +607,36 @@ public class Shooter{
 
         calculatedAngle += adjustmentFromZVelocity;
 
-        //double adamOffset = -10;
-        //calculatedAngle += adamOffset;
+        double adamOffset = -20;
+        calculatedAngle += adamOffset;
         //SmartDashboard.putNumber("Angle to shoot at", calculatedAngle);
 
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
         return calculatedAngle;
     }
 
+
+
     public double calculateAutoAngleWithRotations_MegaTagBotPose(ChassisSpeeds pChassisSpeeds)
     {
-        double[] botPose = mLimelightManager.getBotPoseFromCameraBasedOnChassisSpeeds(pChassisSpeeds);
-        if (!LimelightInformation.isValidBotPoseResults(botPose))
+        return calculateAutoAngleWithRotations_MegaTagBotPose(mLimelightManager.getBotPoseFromCameraBasedOnChassisSpeeds(pChassisSpeeds), pChassisSpeeds);
+    }
+
+    public double calculateAutoAngleWithRotations_MegaTagBotPose_WithCameraPreference(int pCamera)
+    {
+        return calculateAutoAngleWithRotations_MegaTagBotPose(mLimelightManager.getBotPoseByPriorityCamera(pCamera), null);
+    }
+
+    public double calculateAutoAngleWithRotations_MegaTagBotPose(double[] pBotPose, ChassisSpeeds pChassisSpeeds)
+    {        
+        if (!LimelightInformation.isValidBotPoseResults(pBotPose))
         {
             return mLastCalculatedAutoAngleFromCamera;
         }
         double yDisplacement = 1.12;
 
-        double zDisplacement = LimelightInformation.BotPose_GetDistanceFromAllianceStationWall(botPose);
-        double xDisplacement = LimelightInformation.BotPose_GetHorizontalDistanceFromAprilTag(botPose);
+        double zDisplacement = LimelightInformation.BotPose_GetDistanceFromAllianceStationWall(pBotPose);
+        double xDisplacement = LimelightInformation.BotPose_GetHorizontalDistanceFromAprilTag(pBotPose);
 
         SmartDashboard.putNumber("AutoLog: xDisplacement", xDisplacement);
 
@@ -655,6 +673,9 @@ public class Shooter{
 
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
 
+        double adamOffset = -7;
+        calculatedAngle += adamOffset;
+
         SmartDashboard.putNumber("AutoLog: calculatedAngle", calculatedAngle);
         return calculatedAngle;
     }
@@ -682,7 +703,14 @@ public class Shooter{
         double angle;
         if(ShootingState.USE_MEGA_TAG_BOT_POSE)
         {
-            angle = calculateAutoAngleWithRotations_MegaTagBotPose(pChassisSpeeds);
+            if(ShootingState.TECH_VALLEY_AUTO_SHOOTING_VERSION)
+            {
+                angle = calculateAutoAngleWithRotations_MegaTagBotPose(pChassisSpeeds);
+            }
+            else
+            {
+                angle = calculateAutoAngleWithRotations_MegaTagBotPose_WithCameraPreference(LimelightManager.EAST_CAMERA);
+            }
         }
         else
         {
@@ -750,6 +778,19 @@ public class Shooter{
         mPIDController.setOutputRange(-1000, 1000);
     }
 
+    public boolean checkIfAnglerIsCloseEnough(double pTarget)
+    {
+        double calculatedError = pTarget - mAnglerMotor.getEncoder().getPosition();        
+        if (Math.abs(calculatedError) < Constants.ANGLER_ACCEPTABLE_ERROR)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
 
     public boolean checkIfAnglerIsCloseEnough()
     {

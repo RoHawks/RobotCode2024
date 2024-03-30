@@ -56,7 +56,8 @@ public class LimelightManager
         }
     }
 
-
+    /* ATS I don't think we're using this anymore */
+    /*
     public void calculateCameraPoseTargetSpace()
     {
         for(int i = 0; i < mLimeLights.length; i++)
@@ -68,6 +69,7 @@ public class LimelightManager
         //Now offset the west camera to be in the same "spot" as the east camera
         
     }
+    */
 
     private enum CameraBlendMethod
     {
@@ -197,6 +199,7 @@ public class LimelightManager
       double[] east_botpose = getBotposeForSpecificCamera(LimelightManager.EAST_CAMERA);
       double[] west_botpose = getBotposeForSpecificCamera(LimelightManager.WEST_CAMERA);
 
+      
       if(west_botpose != null && east_botpose != null)
       {
         SmartDashboard.putNumber("BotposetWestMinusEast", west_botpose[1] - east_botpose[1] );

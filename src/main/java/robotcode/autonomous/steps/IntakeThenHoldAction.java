@@ -90,8 +90,7 @@ public class IntakeThenHoldAction extends AAction
         }
         
  
-        return
-            mHasBeenInBackupMode && mHoldingMode == HoldingMode.Holding;
+        return true;
         
     }
 

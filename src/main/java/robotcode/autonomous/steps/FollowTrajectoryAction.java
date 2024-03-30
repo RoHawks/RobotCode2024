@@ -36,10 +36,10 @@ public class FollowTrajectoryAction extends AAction {
         mTrajectory, // Choreo trajectory from above
         mSwerveDrive::getPose, // A function that returns the current field-relative pose of the robot: your
                                // wheel or vision odometry
-        new PIDController(0.5, 0.0, 0.0), // PIDController for field-relative X
+        new PIDController(0.8, 0.0, 0.0), // PIDController for field-relative X
                                                                                    // translation (input: X error in meters,
                                                                                    // output: m/s).
-        new PIDController(0.5, 0.0, 0.0), // PIDController for field-relative Y
+        new PIDController(0.8, 0.0, 0.0), // PIDController for field-relative Y
                                                                                    // translation (input: Y error in meters,
                                                                                    // output: m/s).
         thetaController, // PID constants to correct for rotation
