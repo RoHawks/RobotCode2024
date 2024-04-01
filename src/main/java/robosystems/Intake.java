@@ -77,7 +77,7 @@ public class Intake {
     private CANSparkMax mTrapIntake;
     public void TestSetTrapIntakeSpeed(double pSpeed)
     {
-        mTrapIntake.set(pSpeed);
+        mTrapIntake.setVoltage(pSpeed);
     }
 
     public Intake()

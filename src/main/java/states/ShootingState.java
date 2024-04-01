@@ -110,7 +110,7 @@ public class ShootingState extends AState {
         {
             mShooter.setAngleBasedOnShooterMode(mShooterMode, pChassisSpeeds);
         }
-        setExtendoArmPosition();
+        // setExtendoArmPosition();
         setShooterToShooterModesAppropriateSpeed();
         runSwerveDriveToShooterModesAppropriateBehavior();
         

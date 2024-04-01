@@ -146,21 +146,17 @@ public class Robot extends TimedRobot
     int currentIndex = 0;
     robotcode.autonomous.RoutineFactory routineFactory = new robotcode.autonomous.RoutineFactory(mSwerveDrive, mShooter, mIntake);
     
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "SourceSideCrazierModeUnderStage", routineFactory.SourceSideCrazierModeUnderStage()));
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Five Close Rings ", routineFactory.FiveCloseRingTopMiddleAuto()));
+    
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Four Close Rings", routineFactory.FourCloseRingAuto()));
+
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Amp Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
     
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Shoot Close To Stage Close To Source Side", routineFactory.ShootCloseToStageCloseToSourceSide()));
     
-    
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Five Close Rings Shifted", routineFactory.FiveCloseRingTopMiddleAutoShifted()));
-    
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Four Close Rings", routineFactory.FourCloseRingAuto()));
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "SimpleTestPath", routineFactory.SimpleTestPath()));
-    
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "PlayoffsA", routineFactory.PlayoffsA()));
-    
-    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Amp Side Two Notes Plus One Midfield", routineFactory.OnLeftTwoNotePlusMidfield()));
-    
     mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "Avoidance Shoot Close To Stage Close To Source Side", routineFactory.AvoidanceShootCloseToStageCloseToSourceSide()));
+    mAutonomousRoutines.add(new AutonomousEntry(currentIndex++, "FormerPlayoffsA", routineFactory.PlayoffsA()));
     
   }
 
@@ -193,7 +189,7 @@ public class Robot extends TimedRobot
       //mLimelightManager.logLimelightInfo();
       
       mShooter.logShooterInformation();
-      mStateMachine.log();
+      //mStateMachine.log();
       //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
@@ -266,7 +262,7 @@ public class Robot extends TimedRobot
   
     mShooter.ConfigureShooterMotorsForGameMode(RobotMode.AUTONOMOUS);
     mSwerveDrive.ConfigureDriveMotorsForGameMode(true);
-    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
+    
   }
 
   /** This function is called periodically during autonomous. */
@@ -311,7 +307,7 @@ public class Robot extends TimedRobot
 
     mShooter.ConfigureShooterMotorsForGameMode(RobotMode.TELEOPERATED);
     mSwerveDrive.ConfigureDriveMotorsForGameMode(false);
-    AllianceInfo.GetInstance().OverrideAllianceForTestingPurposes(Alliance.Red);
+    
   }
   
 
@@ -586,7 +582,7 @@ public class Robot extends TimedRobot
   }
 
 
-  private double mTestOnlyAnlgerTracker = 0;
+  
   private boolean mTestOnlyHasSeenTrapRing = false;
   private double mTestOnlyShooterSpeed = 0;
 
@@ -726,34 +722,51 @@ public class Robot extends TimedRobot
 
 
 
+  public void testSmartExtendoArmMotion()
+  {
+    if (mMainController.getBButton())
+    {
+      mExtendoArm.smartSetLowGoalTarget();
+    }
+    if (mMainController.getXButton())
+    {
+      mExtendoArm.smartSetRetractTarget();
+    }
+
+    if (mMainController.getAButton())
+    {
+      mExtendoArm.continousSmartPositionUpdate();
+    }
+    else
+    {
+      mExtendoArm.stopMotor();
+    }
+  }
+  
   public void testAnglerAndEtc()
   {
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedBottom", mTestOnlyShooterSpeedBottom);
+    mIntake.TestSetTrapIntakeSpeed(12);
 
-    double angleChange = (mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis()) / 10.0;
+    double angleChange = (mMainController.getRightTriggerAxis() - mMainController.getLeftTriggerAxis()) / 10.0;
     mTestOnlyAnlgerTracker += angleChange;
     mShooter.setAngle(mTestOnlyAnlgerTracker);
 
-    int pov = mMainController.getPOV(); 
-    
-    if(Math.abs(pov - 0.0) < 0.1)
+    if( Math.abs(mMainController.getLeftY()) > 0.1)
     {
-      mExtendoTargetPosition -= 1.0;
-    } 
-    else if(Math.abs(pov - 180.0) < 0.1)
-    {
-      mExtendoTargetPosition += 1.0;
+      mTestOnlyShooterSpeedTop += -1.0 * mMainController.getLeftY() / 100;
     }
 
-    mExtendoArm.goToPosition(mExtendoTargetPosition);
-
-    if( Math.abs(mMainController.getLeftY()) > 0.07)
+    if( Math.abs(mMainController.getRightY()) > 0.1)
     {
-      mTestOnlyShooterSpeed += -1.0 * mMainController.getLeftY() / 100;
+      mTestOnlyShooterSpeedBottom += -1.0 * mMainController.getRightY() / 100;
     }
-    mShooter.setSpeed(mTestOnlyShooterSpeed, mTestOnlyShooterSpeed * 0.75);
+
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom);
     
     
-    if(mMainController.getRightStickButton())
+    if(mMainController.getRightBumper())
     {
       mIntake.setToLaunchingNoteIntoTheShooterSpeed();
     }
@@ -773,12 +786,12 @@ public class Robot extends TimedRobot
     //TestClimberPID();
     // testSpinnyTrapShot();
     //shootySpinnyTrapTest();
-    // RealTestMode(); 
+    //RealTestMode(); 
     // testBlower();
     //testShooterSpeed();
     //testBottomShooterSpeed();
-    // testAnglerAndEtc();
-    testShooterAnglerPID();
+    testAnglerAndEtc();
+    //testShooterAnglerPID();
     
   }
 
@@ -907,8 +920,9 @@ public class Robot extends TimedRobot
     }
   }
 
-  private double mTestOnlyShooterSpeedTop = 0;
-  private double mTestOnlyShooterSpeedBottom = 0;
+  private double mTestOnlyShooterSpeedTop = 15.7;  
+  private double mTestOnlyShooterSpeedBottom = 11.0;
+  private double mTestOnlyAnlgerTracker = 116.35;
   public void testSpinnyTrapShot()
   {
     

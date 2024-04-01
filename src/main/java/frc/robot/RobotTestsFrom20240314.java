@@ -260,7 +260,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
       }
       else if(mMainController.getBButton())
       {
-        mExtendoArm.trapExtension();
+        // mExtendoArm.trapExtension();
         isButtonPressed = true;
       }
       else if(mMainController.getAButton())

@@ -3,6 +3,7 @@ package states;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkFlex;
 
+import frc.robot.Functionality;
 import robosystems.ClimberArms;
 import robosystems.Intake;
 import robosystems.Shooter;
@@ -38,22 +39,24 @@ public class ClimbingState extends AState
 
     }
 
-    public NextStateInfo Run(){
+    public NextStateInfo Run()
+    {
         mSwerveDrive.Run(mControls);
         boolean mFinishedRetracting = mClimberArms.retract();
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0, 0);
         mIntake.setToHoldingSpeed();
 
-
-        if (mControls.GetForceIntakingMode())
+        if (mControls.GetForceIntakingMode() && mFinishedRetracting)
         {
+            ClimbingModeManager.setClimbingMode(ClimbingMode.Off);
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
 
         ClimbingModeManager.determineClimbingMode(mControls);
         if (mControls.GetPrepareToClimb())
         {
+            ClimbingModeManager.setClimbingMode(ClimbingMode.Extending);
             return new NextStateInfo(States.Intaking, mShooterMode);
         }
 

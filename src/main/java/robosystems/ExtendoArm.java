@@ -12,6 +12,7 @@ import com.revrobotics.CANDigitalInput;
 import com.revrobotics.CANDigitalInput.LimitSwitchPolarity;
 import com.revrobotics.SparkRelativeEncoder.Type;
 
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class ExtendoArm {
@@ -19,9 +20,9 @@ public class ExtendoArm {
     private RelativeEncoder mExtendoEncoder;
     private SparkLimitSwitch mTrapIntakeLimitSwitch;
     
-    private double LOW_GOAL_TARGET = -3600 * 1.02; //Replace with proper value
-    private double TRAP_TARGET = -2000; //Replace with proper value
-    private double RETRACT_TARGET = -50;
+    private double LOW_GOAL_TARGET = -62.404 * 1.02; //Replace with proper value
+
+    private double RETRACT_TARGET = -0.02;
    
     public void testOnlyRunAtSpeed(double pSpeed)
     {
@@ -35,13 +36,13 @@ public class ExtendoArm {
 
     private CANSparkMax CreateExtendoArmsMotor(int pDeviceID, boolean pIsInverted)
     {
-        CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushed);
+        CANSparkMax returnValue = new CANSparkMax(pDeviceID, MotorType.kBrushless);
         returnValue.setSmartCurrentLimit(39);
         returnValue.setIdleMode(IdleMode.kBrake);
         returnValue.setInverted(pIsInverted);
 
-        returnValue.setSoftLimit(SoftLimitDirection.kForward, -20);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -3700);
+        returnValue.setSoftLimit(SoftLimitDirection.kForward, -0.01f);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -64);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
         
@@ -86,6 +87,38 @@ public class ExtendoArm {
         mExtendoMotor.getPIDController().setReference(pPosition, ControlType.kPosition);
     }
 
+    
+    TrapezoidProfile.Constraints mExtendoProfileConstraints = new TrapezoidProfile.Constraints(1,0.4);
+    TrapezoidProfile.State mExtendoProfileGoal;
+    TrapezoidProfile.State mExtendoProfileSetpoint;
+    TrapezoidProfile profile;
+    double lastSetPosition = RETRACT_TARGET;
+    public void continousSmartPositionUpdate()
+    {
+        double kDt = 0.005;
+
+        mExtendoProfileGoal = new TrapezoidProfile.State(lastSetPosition, 0);
+        profile = new TrapezoidProfile(mExtendoProfileConstraints, mExtendoProfileGoal, mExtendoProfileSetpoint);
+        mExtendoProfileSetpoint = profile.calculate(kDt);
+        SmartDashboard.putNumber("UpperJointSetPoint", mExtendoProfileSetpoint.position);
+        SmartDashboard.putNumber("UpperJointSetVelocity", mExtendoProfileSetpoint.velocity);
+        mExtendoMotor.getPIDController().setReference(mExtendoProfileSetpoint.position, ControlType.kPosition);
+    }
+
+    public void smartSetPosition(double pPosition)
+    {
+        lastSetPosition = pPosition;   
+    }
+
+    public void smartSetLowGoalTarget()
+    {
+        lastSetPosition = LOW_GOAL_TARGET;   
+    }
+
+    public void smartSetRetractTarget()
+    {
+        lastSetPosition = RETRACT_TARGET;   
+    }
 
     // Extend arm until it gets to LOW_GOAL_EXTENSION_TARGET
     public void lowGoalExtension() 
@@ -103,10 +136,7 @@ public class ExtendoArm {
         return hasReachedPosition(LOW_GOAL_TARGET);
     }
 
-    // Extend arm until it gets to TRAP_TARGET
-    public void trapExtension() {
-        goToPosition(TRAP_TARGET);
-    }
+
      // Retract arm until it gets to RETRACT_TARGET
      public void retract() 
      {
