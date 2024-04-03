@@ -619,7 +619,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
       mExtendoTargetPosition += 1.0;
     }
 
-    mExtendoArm.goToPosition(mExtendoTargetPosition);
+    //mExtendoArm.goToPosition(mExtendoTargetPosition);
 
 
     
@@ -878,7 +878,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
       mExtendoTargetPosition += 1.0;
     }
 
-    mExtendoArm.goToPosition(mExtendoTargetPosition);
+    //mExtendoArm.goToPosition(mExtendoTargetPosition);
     SmartDashboard.putNumber("ExtendoTarget", mExtendoTargetPosition);
     SmartDashboard.putNumber("ExtendoCurrent", mExtendoArm.getCurrentDraw());
     SmartDashboard.putNumber("ExtendoEncoder", mExtendoArm.getEncoderReading());
@@ -978,7 +978,7 @@ public class RobotTestsFrom20240314 extends TimedRobot
       mExtendoTargetPosition += 1.0;
     }
 
-    mExtendoArm.goToPosition(mExtendoTargetPosition);
+    //mExtendoArm.goToPosition(mExtendoTargetPosition);
     SmartDashboard.putNumber("ExtendoTarget", mExtendoTargetPosition);
     SmartDashboard.putNumber("ExtendoCurrent", mExtendoArm.getCurrentDraw());
     SmartDashboard.putNumber("ExtendoEncoder", mExtendoArm.getEncoderReading());

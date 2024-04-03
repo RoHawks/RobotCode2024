@@ -43,7 +43,7 @@ import com.choreo.lib.ChoreoTrajectoryState;
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-public class Robot extends TimedRobot 
+public class RobotTestsFrom20240401 extends TimedRobot 
 {
   private class AutonomousEntry
   {
@@ -93,7 +93,7 @@ public class Robot extends TimedRobot
 
   
 
-  public Robot()
+  public RobotTestsFrom20240401()
   {
     super(0.005);//ovverride the loop timing... it was 20ms, set it to 10ms.
   }
@@ -161,7 +161,7 @@ public class Robot extends TimedRobot
   }
 
 
-  private boolean mLoggingEnabled = true;
+  private boolean mLoggingEnabled = false;
   private boolean mLastLoggingEnabledTogglePressed = false;
 
   private void checkLoggingEnabledToggle()
@@ -188,13 +188,13 @@ public class Robot extends TimedRobot
       //SmartDashboard.putNumber("Logging At", System.currentTimeMillis());
       //mLimelightManager.logLimelightInfo();
       
-      //mShooter.logShooterInformation();
+      mShooter.logShooterInformation();
       //mStateMachine.log();
-      mExtendoArm.logExtendoArm();
+      //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
       
-      //mIntake.logIntake();
+      mIntake.logIntake();
       //mShooter.logShooterInformation();
   
       /*
@@ -345,6 +345,169 @@ public class Robot extends TimedRobot
     }   
   }
 
+  public void testAnglerLimits(){
+
+  }
+
+  boolean mStarted = false;
+  boolean mFirstHit = false;
+  boolean mPersSpeed = false;
+  double started = 0;
+  private void testTimedShooterTest()
+  {
+    mShooter.spinUpToHighGoalSpeed();
+    if (!mStarted)
+    {
+      mStarted = true;
+      started = System.currentTimeMillis();
+      SmartDashboard.putNumber("time when started", System.currentTimeMillis());
+    }
+
+    if (!mFirstHit && Math.abs(mShooter.getTopSpeed() - Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED) < 1)
+    {
+      mFirstHit = true;
+      SmartDashboard.putNumber("time when first reached speed", System.currentTimeMillis());
+      SmartDashboard.putNumber("delta time when first reached speed", System.currentTimeMillis() - started);
+    }
+
+    if (!mPersSpeed && mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalDriveBy))
+    {
+      mPersSpeed = true;
+      SmartDashboard.putNumber("time when persistently correct speed", System.currentTimeMillis());
+      SmartDashboard.putNumber("delta time when persistently correct speed", System.currentTimeMillis() - started);
+    }
+  }
+
+  private void shootySpinnyTrapTest(){
+    
+    double angleChange = (mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis()) / 10.0;
+    mTestOnlyAnlgerTracker += angleChange;
+    mShooter.setAngle(mTestOnlyAnlgerTracker);
+
+    if (mMainController.getYButton())
+    {
+      mClimberArms.extend();
+    }
+    else if (mMainController.getXButton())
+    {
+      mClimberArms.retract();
+    }
+    
+
+    
+    // int pov = mMainController.getPOV(); 
+    
+    // if(Math.abs(pov - 0.0) < 0.1)
+    // {
+    //   mExtendoTargetPosition -= 1.0;
+    // } 
+    // else if(Math.abs(pov - 180.0) < 0.1)
+    // {
+    //   mExtendoTargetPosition += 1.0;
+    // }
+
+    // mExtendoArm.goToPosition(mExtendoTargetPosition);
+
+
+    
+    double topWheels = mMainController.getRightY(); 
+    if( Math.abs(topWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedTop+= -1.0 * topWheels / 100;
+    }
+    
+    double bottomWheels = mMainController.getLeftY();
+    if( Math.abs(bottomWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedBottom += -1.0 * bottomWheels / 100;
+    }
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedBottom", mTestOnlyShooterSpeedBottom);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom); 
+
+    
+    
+    if(mMainController.getStartButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+  }
+
+  
+  private double recordedTurningAngle = 0;
+  private boolean triggedPreviousTime = false;
+  private boolean hasSetAnything = false;
+  private long timeWhenCloseEnough = -1;
+  int i = 0;
+  public void autoAngleShootTest()
+  {
+    
+    
+    SmartDashboard.putNumber("AutoLog: timeWhenCloseEnough", timeWhenCloseEnough);
+    SmartDashboard.putNumber("AutoLog: recordedTurningAngle", recordedTurningAngle);
+    if (!triggedPreviousTime && mControls.GetStartShootingSequence())
+    {
+      hasSetAnything = true;
+      recordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+      angleShooterToTheAprilTag();
+      i = 0;
+      timeWhenCloseEnough = -1;
+    }
+    
+    if (hasSetAnything)
+    {
+      turnToTheAprilTag(recordedTurningAngle);
+      double gyroAngle = mSwerveDrive.GetGyroscopeCurrentAngle(); 
+      boolean closeEnough = Math.abs(gyroAngle - recordedTurningAngle) < 7;
+
+      SmartDashboard.putNumber("AutoLog: gyroAngle", gyroAngle);
+      SmartDashboard.putBoolean("AutoLog: closeEnough", closeEnough);
+      SmartDashboard.putNumber("AutoLog: displacementFromDesiredAngle", Math.abs(gyroAngle - recordedTurningAngle));
+
+      if (closeEnough && timeWhenCloseEnough < 0)
+      {
+        timeWhenCloseEnough = System.currentTimeMillis();
+      }
+      else if (!closeEnough)
+      {
+        timeWhenCloseEnough = -1;
+      }
+
+      if (timeWhenCloseEnough > 0 && System.currentTimeMillis() - timeWhenCloseEnough > 1000)
+      {
+        // mShooter.checkIfPersistentlyHasCorrectSpeed(ShooterMode.HighGoalManual);
+        // double angle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+        if (mShooter.checkIfAnglerIsCloseEnough()) // gyroAngle == angle &&
+        {
+          SmartDashboard.putNumber("AutoLog: is Shooting", System.currentTimeMillis());
+          mIntake.setToLaunchingNoteIntoTheShooterSpeed(); 
+          mShooter.spinUpToHighGoalSpeed();
+        }
+        else 
+        {
+          // recordedTurningAngle = LimelightInformation.GetAngleToAprilTag(mLimelightManager.getBotPoseByPriorityCamera(LimelightManager.EAST_CAMERA));
+          // angleShooterToTheAprilTag();
+          i++;
+          SmartDashboard.putNumber("i", i);
+
+        }
+      }
+      else
+      {
+        mShooter.spinUpToHighGoalSpeed();
+        mIntake.setToHoldingSpeed();
+    }
+    }
+    triggedPreviousTime = mControls.GetStartShootingSequence();
+     
+  }
+
+
   public void teleopPeriodic()
   {
     SmartDashboard.putNumber("Time Into Teleop", System.currentTimeMillis() - mTeleopStartTime);
@@ -420,6 +583,90 @@ public class Robot extends TimedRobot
 
 
   
+  private boolean mTestOnlyHasSeenTrapRing = false;
+  private double mTestOnlyShooterSpeed = 0;
+
+  public void testTrapMechanism()
+  {
+
+//    mSwerveDrive.Run(mControls);
+      
+    
+    double angleChange = (mMainController.getLeftTriggerAxis() - mMainController.getRightTriggerAxis()) / 10.0;
+    mTestOnlyAnlgerTracker += angleChange;
+    mShooter.setAngle(mTestOnlyAnlgerTracker);
+
+    double armSpeed = 0.5;
+    if (mMainController.getYButton())
+    {
+      mClimberArms.extend();
+    }
+    else if (mMainController.getXButton())
+    {
+      mClimberArms.retract();
+    }
+    else
+    {
+      mClimberArms.TEST_ONLY_SetRightArmSpeed(0);      
+      mClimberArms.TEST_ONLY_SetLeftArmSpeed(0);      
+    }
+
+
+    
+    int pov = mMainController.getPOV(); 
+    
+    if(Math.abs(pov - 0.0) < 0.1)
+    {
+      mExtendoTargetPosition -= 1.0;
+    } 
+    else if(Math.abs(pov - 180.0) < 0.1)
+    {
+      mExtendoTargetPosition += 1.0;
+    }
+
+    //mExtendoArm.goToPosition(mExtendoTargetPosition);
+
+
+    if(!mTestOnlyHasSeenTrapRing)
+    {
+      mTestOnlyHasSeenTrapRing = mExtendoArm.GetTrapLimitSwitch();
+    }
+    if(mMainController.getRightBumper() && !mTestOnlyHasSeenTrapRing)
+    {
+      mIntake.TestSetTrapIntakeSpeed(-1.0);
+    }
+    else
+    {
+       mIntake.TestSetTrapIntakeSpeed(0);
+    }
+
+     
+    if( Math.abs(mMainController.getLeftY()) > 0.07)
+    {
+      mTestOnlyShooterSpeed += -1.0 * mMainController.getLeftY() / 100;
+    }
+    mShooter.setSpeed(mTestOnlyShooterSpeed, mTestOnlyShooterSpeed * 0.75);
+    
+    
+    if(mMainController.getRightStickButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+    SmartDashboard.putNumber("TestMode-ExtendoArmEncoder", mExtendoArm.getEncoderReading());
+    SmartDashboard.putNumber("TestMode-ExtendoArmTarget", mExtendoTargetPosition);
+
+    SmartDashboard.putNumber("TestMode-AnglerAngle", mShooter.GetAnglerEncoderReading());
+    SmartDashboard.putNumber("TestMode-AnglerTargetAngle", mTestOnlyAnlgerTracker);
+
+    SmartDashboard.putBoolean("TestMode-TrapLimitSwitchA", mExtendoArm.GetTrapLimitSwitch());
+    SmartDashboard.putNumber("TestMode-mTestOnlyShooterSpeed", mTestOnlyShooterSpeed);
+  }
+
   private double Ternary(boolean pConditionA, double pValueA, boolean pConditionB, double pValueB, double pValueElse)
   {
     return pConditionA ? pValueA : (pConditionB ? pValueB : pValueElse);
@@ -456,114 +703,272 @@ public class Robot extends TimedRobot
       SmartDashboard.putBoolean("Break Beam Status", mIntake.getBreakBeamStatus());
   }
 
-
-  private void testSimpleExtendoArm()
+  private void TestClimberPID()
   {
-    double speed = mMainController.getRightTriggerAxis() - mMainController.getLeftTriggerAxis();
-    if(Math.abs(speed) > 0.1)
+    if(mMainController.getXButton())
     {
-      mExtendoArm.testOnlyRunAtSpeed((mMainController.getRightTriggerAxis() - mMainController.getLeftTriggerAxis())/5.0);
-    }
-    else
-    {
-      mExtendoArm.testOnlyRunAtSpeed(0);
-    }
-    
-  }
-
-  /*
-private void testPIDExtendoArm()
-  {
-    
-    if(mMainController.getAButton())
-    {
-      mExtendoArm.testOnlyPIDToPosition(5);
-    }
-    else if(mMainController.getXButton())
-    {
-      mExtendoArm.testOnlyPIDToPosition(20);
+      mClimberArms.extend();
     }
     else if(mMainController.getYButton())
     {
-      mExtendoArm.testOnlyPIDToPosition(40);
-    }
-    else if(mMainController.getBButton())
-    {
-      mExtendoArm.testOnlyPIDToPosition(60);
+      mClimberArms.retract();
     }
     else
     {
-      mExtendoArm.testOnlyRunAtSpeed(0);
+      mClimberArms.TEST_ONLY_SetLeftArmSpeed(0);
+      mClimberArms.TEST_ONLY_SetRightArmSpeed(0);
     }
-    
   }
-  */
 
-  //private boolean mTestOnlyLastWasPressingMotionButton = false;
+
 
   public void testSmartExtendoArmMotion()
   {
-    
-    boolean isPressingSmartMotionButton = false;
-    if(mMainController.getRightBumper())
+    if (mMainController.getBButton())
     {
-      if(mMainController.getAButton())
-      {
-        mExtendoArm.smartSetPosition(10);
-        isPressingSmartMotionButton = true;
-      }
-      else if(mMainController.getXButton())
-      {
-        mExtendoArm.smartSetPosition(20);
-        isPressingSmartMotionButton = true;
-        
-      }
-      else if(mMainController.getYButton())
-      {
-        mExtendoArm.smartSetPosition(40);
-        isPressingSmartMotionButton = true;
-        
-      }
-      else if(mMainController.getBButton())
-      {
-        mExtendoArm.smartSetPosition(60);
-        isPressingSmartMotionButton = true;
-        
-      }
-      else
-      {
-        mExtendoArm.testOnlyRunAtSpeed(0);
-      }
+      mExtendoArm.smartSetLowGoalTarget();
+    }
+    if (mMainController.getXButton())
+    {
+      mExtendoArm.smartSetRetractTarget();
+    }
 
-      /*
-      if(isPressingSmartMotionButton && !mTestOnlyLastWasPressingMotionButton)
-      {
-        mExtendoArm.setSmartMotionInitial();
-      }
-      */
-      if(isPressingSmartMotionButton)
-      {
-        mExtendoArm.continousSmartPositionUpdate();
-      }
-      //mTestOnlyLastWasPressingMotionButton = isPressingSmartMotionButton;
+      
+    if (mMainController.getAButton())
+    {
+      mExtendoArm.continousSmartPositionUpdate();
     }
     else
     {
-      mExtendoArm.testOnlyRunAtSpeed(0);
-      //mTestOnlyLastWasPressingMotionButton = false;
+      mExtendoArm.stopMotor();
+    }
+  }
+  
+  public void testAnglerAndEtc()
+  {
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedBottom", mTestOnlyShooterSpeedBottom);
+    mIntake.TestSetTrapIntakeSpeed(12);
+
+    double angleChange = (mMainController.getRightTriggerAxis() - mMainController.getLeftTriggerAxis()) / 10.0;
+    mTestOnlyAnlgerTracker += angleChange;
+    mShooter.setAngle(mTestOnlyAnlgerTracker);
+
+    if( Math.abs(mMainController.getLeftY()) > 0.1)
+    {
+      mTestOnlyShooterSpeedTop += -1.0 * mMainController.getLeftY() / 100;
+    }
+
+    if( Math.abs(mMainController.getRightY()) > 0.1)
+    {
+      mTestOnlyShooterSpeedBottom += -1.0 * mMainController.getRightY() / 100;
+    }
+
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom);
+    
+    
+    if(mMainController.getRightBumper())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
+    }
+
+  }
+
+  public void testPeriodic()
+  {    
+    //testTrapMechanism();
+    //SwerveDrive.Run(mControls);
+    //testExtendoArmPID();
+    //TestJustSwerve();
+    //TestClimberPID();
+    // testSpinnyTrapShot();
+    //shootySpinnyTrapTest();
+    //RealTestMode(); 
+    // testBlower();
+    //testShooterSpeed();
+    //testBottomShooterSpeed();
+    //testAnglerAndEtc();
+    //testShooterAnglerPID();
+    
+  }
+
+  private void testShooterAnglerPID()
+  {
+      if(mMainController.getAButton())
+      {
+        mShooter.setAngle(Constants.INTAKING_ANGLE);
+      }
+      else if(mMainController.getBButton())
+      {
+        mShooter.setAngle(Constants.LOW_GOAL_ANGLE);
+      }
+      else if(mMainController.getXButton())
+      {
+        mShooter.setAngle(Constants.HIGH_GOAL_ANGLE);
+      }
+      else
+      {
+        mShooter.stopAnglerMotor();
+      }
+
+  }
+
+  private void testBlower()
+  {
+    this.mIntake.TestSetTrapIntakeSpeed(1);
+  }
+
+ 
+
+  private boolean mTestHasBegun = false;
+  private boolean mReachedMilestoneA= false;
+  private boolean mReachedMilestoneB= false;
+  private boolean mReachedMilestoneC= false;
+  private boolean mReachedMilestoneD= false;
+  private long mTestStartTimestamp = 0;
+  private void testShooterSpeed()
+  {
+
+    if(mMainController.getAButton())
+    {
+      
+      if(!mTestHasBegun)
+      {
+        mTestHasBegun = true;
+        mTestStartTimestamp = System.currentTimeMillis();
+      }
+      mShooter.setSpeed(Constants.SHOOTER_HIGH_TOP_DEFAULT_SPEED, 0);
+      if(!mReachedMilestoneA && Math.abs(mShooter.getTopSpeed()) > 35.0 )
+      {
+        mReachedMilestoneA = true;
+        SmartDashboard.putNumber("Milestone A", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneB && Math.abs(mShooter.getTopSpeed()) > 40.0 )
+      {
+        mReachedMilestoneB = true;
+        SmartDashboard.putNumber("Milestone B", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneC && Math.abs(mShooter.getTopSpeed()) > 44.0 )
+      {
+        mReachedMilestoneC = true;
+        SmartDashboard.putNumber("Milestone C", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneD && Math.abs(mShooter.getTopSpeed()) > 45.0 )
+      {
+        mReachedMilestoneD = true;
+        SmartDashboard.putNumber("Milestone D", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+
+    }
+    else
+    {
+      mShooter.setSpeed(0, 0);
+      mTestHasBegun = false;
+      mReachedMilestoneA = false;
+      mReachedMilestoneB = false;
+      mReachedMilestoneC = false;
+      mReachedMilestoneD = false;
+    }
+  }
+
+
+   private void testBottomShooterSpeed()
+  {
+
+    if(mMainController.getAButton())
+    {
+      
+      if(!mTestHasBegun)
+      {
+        mTestHasBegun = true;
+        mTestStartTimestamp = System.currentTimeMillis();
+      }
+      mShooter.setSpeed(0, Constants.SHOOTER_HIGH_BOTTOM_DEFAULT_SPEED);
+      if(!mReachedMilestoneA && Math.abs(mShooter.getBottomSpeed()) > 35.0 * 0.75)
+      {
+        mReachedMilestoneA = true;
+        SmartDashboard.putNumber("Milestone A", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneB && Math.abs(mShooter.getBottomSpeed()) > 40.0  * 0.75 )
+      {
+        mReachedMilestoneB = true;
+        SmartDashboard.putNumber("Milestone B", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneC && Math.abs(mShooter.getBottomSpeed()) > 44.0  * 0.75 )
+      {
+        mReachedMilestoneC = true;
+        SmartDashboard.putNumber("Milestone C", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+      if(!mReachedMilestoneD && Math.abs(mShooter.getBottomSpeed()) > 45.0  * 0.75 )
+      {
+        mReachedMilestoneD = true;
+        SmartDashboard.putNumber("Milestone D", (System.currentTimeMillis()- mTestStartTimestamp));
+      }
+
+    }
+    else
+    {
+      mShooter.setSpeed(0, 0);
+      mTestHasBegun = false;
+      mReachedMilestoneA = false;
+      mReachedMilestoneB = false;
+      mReachedMilestoneC = false;
+      mReachedMilestoneD = false;
+    }
+  }
+
+  private double mTestOnlyShooterSpeedTop = 15.7;  
+  private double mTestOnlyShooterSpeedBottom = 11.0;
+  private double mTestOnlyAnlgerTracker = 116.35;
+  public void testSpinnyTrapShot()
+  {
+    
+    double topWheels = mMainController.getRightY(); 
+    if( topWheels > 0.07)
+    {
+      mTestOnlyShooterSpeedTop+= -1.0 * topWheels / 100;
+    }
+    
+    double bottomWheels = mMainController.getLeftY();
+    if( Math.abs(bottomWheels) > 0.07)
+    {
+      mTestOnlyShooterSpeedBottom += -1.0 * bottomWheels / 100;
+    }
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedBottom);
+    SmartDashboard.putNumber("mTestOnlyShooterSpeedTop", mTestOnlyShooterSpeedTop);
+    mShooter.setSpeed(mTestOnlyShooterSpeedTop, mTestOnlyShooterSpeedBottom);
+
+    if(mMainController.getStartButton())
+    {
+      mIntake.setToLaunchingNoteIntoTheShooterSpeed();
+    }
+    else
+    {
+      mIntake.stopMotors();
     }
 
 
-  }
-  
-  public void testPeriodic()
-  {    
-    //testSimpleExtendoArm();
-    //testPIDExtendoArm();
-    testSmartExtendoArmMotion();
-    //RealTestMode(); 
 
-    
+  }
+
+  public void turnAndAngleToTheAprilTag(double pTurningAngle)
+  {
+    turnToTheAprilTag(pTurningAngle);
+    angleShooterToTheAprilTag();
+  }
+
+  public void turnToTheAprilTag(double pAngle)
+  {
+    mSwerveDrive.Run(mControls, true, pAngle);
+  }
+
+  public void angleShooterToTheAprilTag()
+  {
+    mShooter.setAngleBasedOnShooterMode(ShooterMode.AutoAim);
   }
 
 

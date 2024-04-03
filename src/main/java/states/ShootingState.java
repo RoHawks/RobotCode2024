@@ -113,6 +113,7 @@ public class ShootingState extends AState {
         // setExtendoArmPosition();
         setShooterToShooterModesAppropriateSpeed();
         runSwerveDriveToShooterModesAppropriateBehavior();
+        mExtendoArm.continousSmartPositionUpdate();
         
   
 

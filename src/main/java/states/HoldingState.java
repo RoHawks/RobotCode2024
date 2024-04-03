@@ -100,6 +100,7 @@ public class HoldingState extends AState {
         // logHoldingStateValues();
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);        
         mExtendoArm.retract();
+        mExtendoArm.continousSmartPositionUpdate();
         Functionality.setArmsBasedOnClimberMode(ClimbingModeManager.getClimbingMode(), mClimberArms);
         mShooter.checkIfPersistentlyHasCorrectSpeed(mShooterMode);
         //mShooter.logShooterInformation();

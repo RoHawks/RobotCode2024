@@ -61,6 +61,7 @@ public class EjectingState extends AState
         mSwerveDrive.Run(mControls);
         mClimberArms.retract();
         mExtendoArm.retract();
+        mExtendoArm.continousSmartPositionUpdate();
         mShooter.setAngleToIntakingAngle();
         mLights.SetLightingScheme(LightingScheme.Ejecting);
         mLights.Run();

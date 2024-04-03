@@ -66,6 +66,7 @@ public class IntakingState extends AState {
         mShooter.setAngleToIntakingAngle();
         mShooter.setSpeed(0,0);
         mExtendoArm.retract();
+        mExtendoArm.continousSmartPositionUpdate();
         mLights.SetLightingScheme(LightingScheme.Intaking);
         mLights.Run();
         mShooterMode = Functionality.checkForShootingPreperationButtons(mControls, mShooterMode);

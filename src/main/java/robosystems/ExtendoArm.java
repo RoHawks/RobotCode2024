@@ -20,9 +20,9 @@ public class ExtendoArm {
     private RelativeEncoder mExtendoEncoder;
     private SparkLimitSwitch mTrapIntakeLimitSwitch;
     
-    private double LOW_GOAL_TARGET = -62.404 * 1.02; //Replace with proper value
+    private double LOW_GOAL_TARGET = 62.404 * 1.02; //Replace with proper value
 
-    private double RETRACT_TARGET = -0.02;
+    private double RETRACT_TARGET = 7;
    
     public void testOnlyRunAtSpeed(double pSpeed)
     {
@@ -41,17 +41,17 @@ public class ExtendoArm {
         returnValue.setIdleMode(IdleMode.kBrake);
         returnValue.setInverted(pIsInverted);
 
-        returnValue.setSoftLimit(SoftLimitDirection.kForward, -0.01f);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, -64);
+        returnValue.setSoftLimit(SoftLimitDirection.kForward, 65);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, 5);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
         
 
-        returnValue.getPIDController().setP(0.0014);
-        returnValue.getPIDController().setI(0.000004);
+        returnValue.getPIDController().setP(0.05);
+        returnValue.getPIDController().setI(0.0001);
         returnValue.getPIDController().setD(0.00);
         returnValue.getPIDController().setFF(0.00);
-        returnValue.getPIDController().setIZone(500);
+        returnValue.getPIDController().setIZone(2);
 
         returnValue.getPIDController().setOutputRange(-1, 1);
 
@@ -74,61 +74,77 @@ public class ExtendoArm {
     // Constructor
     public ExtendoArm() {
         mExtendoMotor =  CreateExtendoArmsMotor(7,false);
-        mExtendoEncoder = mExtendoMotor.getEncoder(Type.kQuadrature, 1);
+        mExtendoEncoder = mExtendoMotor.getEncoder();
+        mExtendoEncoder.setPositionConversionFactor(1.0);
+        mExtendoMotor.burnFlash();
 
         mTrapIntakeLimitSwitch = mExtendoMotor.getForwardLimitSwitch(SparkLimitSwitch.Type.kNormallyClosed);
-        
+        setSmartMotionInitial();
+    }
+
+    /*ATS everything must be done with smart motion now */
+    /*
+    public void testOnlyPIDToPosition(double pPositon)
+    {
+        goToPosition(pPositon);
     }
 
     private double mLastTarget = 0;
+    
+    
     public void goToPosition(double pPosition)
     {
         mLastTarget = pPosition;
         mExtendoMotor.getPIDController().setReference(pPosition, ControlType.kPosition);
     }
-
+    */
     
-    TrapezoidProfile.Constraints mExtendoProfileConstraints = new TrapezoidProfile.Constraints(1,0.4);
+    TrapezoidProfile.Constraints mExtendoProfileConstraints = new TrapezoidProfile.Constraints(160,600);
     TrapezoidProfile.State mExtendoProfileGoal;
-    TrapezoidProfile.State mExtendoProfileSetpoint;
-    TrapezoidProfile profile;
-    double lastSetPosition = RETRACT_TARGET;
+    TrapezoidProfile.State mExtendoProfileSetpoint;     
+    double mLastSetPosition = RETRACT_TARGET;
     public void continousSmartPositionUpdate()
     {
         double kDt = 0.005;
 
-        mExtendoProfileGoal = new TrapezoidProfile.State(lastSetPosition, 0);
-        profile = new TrapezoidProfile(mExtendoProfileConstraints, mExtendoProfileGoal, mExtendoProfileSetpoint);
+        mExtendoProfileGoal = new TrapezoidProfile.State(mLastSetPosition, 0);
+        TrapezoidProfile profile = new TrapezoidProfile(mExtendoProfileConstraints, mExtendoProfileGoal, mExtendoProfileSetpoint);
         mExtendoProfileSetpoint = profile.calculate(kDt);
-        SmartDashboard.putNumber("UpperJointSetPoint", mExtendoProfileSetpoint.position);
-        SmartDashboard.putNumber("UpperJointSetVelocity", mExtendoProfileSetpoint.velocity);
+        SmartDashboard.putNumber("ExtendoArmProfileSetPoint", mExtendoProfileSetpoint.position);
+        SmartDashboard.putNumber("ExtendoArmProfileVelocity", mExtendoProfileSetpoint.velocity);
         mExtendoMotor.getPIDController().setReference(mExtendoProfileSetpoint.position, ControlType.kPosition);
+    }
+    
+    private void setSmartMotionInitial()
+    {
+        mExtendoProfileSetpoint = new TrapezoidProfile.State(mExtendoEncoder.getPosition(), 0);
     }
 
     public void smartSetPosition(double pPosition)
     {
-        lastSetPosition = pPosition;   
+        mLastSetPosition = pPosition;   
     }
 
     public void smartSetLowGoalTarget()
     {
-        lastSetPosition = LOW_GOAL_TARGET;   
+        mLastSetPosition = LOW_GOAL_TARGET;   
     }
 
     public void smartSetRetractTarget()
     {
-        lastSetPosition = RETRACT_TARGET;   
+        mLastSetPosition = RETRACT_TARGET;   
     }
 
     // Extend arm until it gets to LOW_GOAL_EXTENSION_TARGET
     public void lowGoalExtension() 
     {
-        goToPosition(LOW_GOAL_TARGET);
+        smartSetLowGoalTarget();
+        
     }
 
     private boolean hasReachedPosition(double pPosition)
     {
-        return Math.abs(mExtendoEncoder.getPosition() - pPosition) < 100;
+        return Math.abs(mExtendoEncoder.getPosition() - pPosition) < 0.5; //rotations of motor now...
     }
 
     public boolean hasReachedLowGoal()
@@ -140,7 +156,7 @@ public class ExtendoArm {
      // Retract arm until it gets to RETRACT_TARGET
      public void retract() 
      {
-        goToPosition(RETRACT_TARGET);
+        smartSetRetractTarget();
     }
     
 
@@ -155,7 +171,7 @@ public class ExtendoArm {
         SmartDashboard.putNumber("ExtendoArm-Output", mExtendoMotor.getAppliedOutput());
         SmartDashboard.putNumber("ExtendoArm-Current", mExtendoMotor.getOutputCurrent());
         SmartDashboard.putNumber("ExtendoArm-Position", mExtendoEncoder.getPosition());
-        SmartDashboard.putNumber("ExtendoArm-TargetPosition", mLastTarget);
+        SmartDashboard.putNumber("ExtendoArm-TargetPosition", mLastSetPosition);
     
     }
 }
