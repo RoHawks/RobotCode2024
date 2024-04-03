@@ -20,9 +20,9 @@ public class ExtendoArm {
     private RelativeEncoder mExtendoEncoder;
     private SparkLimitSwitch mTrapIntakeLimitSwitch;
     
-    private double LOW_GOAL_TARGET = 62.404 * 1.02; //Replace with proper value
+    private double LOW_GOAL_TARGET = 62.404 * 1.07; //Replace with proper value
 
-    private double RETRACT_TARGET = 7;
+    private double RETRACT_TARGET = 3.5;
    
     public void testOnlyRunAtSpeed(double pSpeed)
     {
@@ -41,8 +41,8 @@ public class ExtendoArm {
         returnValue.setIdleMode(IdleMode.kBrake);
         returnValue.setInverted(pIsInverted);
 
-        returnValue.setSoftLimit(SoftLimitDirection.kForward, 65);
-        returnValue.setSoftLimit(SoftLimitDirection.kReverse, 5);
+        returnValue.setSoftLimit(SoftLimitDirection.kForward, 68);
+        returnValue.setSoftLimit(SoftLimitDirection.kReverse, 3);
         returnValue.enableSoftLimit(SoftLimitDirection.kForward, true);
         returnValue.enableSoftLimit(SoftLimitDirection.kReverse, true);
         

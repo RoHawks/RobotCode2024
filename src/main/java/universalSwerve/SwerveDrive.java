@@ -742,7 +742,7 @@ public class SwerveDrive
                 //this takes care of the "drive it in reverse if your are close to the right angle already" thing:
                 SwerveModuleState optimizedTargetState = OptimizeTargetState(targetState, wheel.GetCurrentAngle());
                 
-                SmartDashboard.putNumber("Choreo_NE_X_DesiredSpeed", optimizedTargetState.speedMetersPerSecond);
+                //SmartDashboard.putNumber("Choreo_NE_X_DesiredSpeed", optimizedTargetState.speedMetersPerSecond);
 
                 switch(wheel.GetWheelMode())
                 {

@@ -445,8 +445,9 @@ public class Robot extends TimedRobot
       mIntake.TestSetTrapIntakeSpeed(mControls.TestOnly_TrapMechanismOn() ? 0.25 : 0 );
 
       if(mControls.TestOnly_AllowSwerveDuringTestMode())
-      {        
-        mSwerveDrive.Run(mControls);
+      {   
+        //eh, let's just not make this possible.... too risky.     
+        //mSwerveDrive.Run(mControls);
       }
       else
       {        
@@ -560,8 +561,8 @@ private void testPIDExtendoArm()
   {    
     //testSimpleExtendoArm();
     //testPIDExtendoArm();
-    testSmartExtendoArmMotion();
-    //RealTestMode(); 
+    //testSmartExtendoArmMotion();
+    RealTestMode(); 
 
     
   }
