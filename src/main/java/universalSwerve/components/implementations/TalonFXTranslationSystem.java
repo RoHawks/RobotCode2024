@@ -46,8 +46,8 @@ public class TalonFXTranslationSystem implements ITranslationSystem{
         }
         else
         {
-            returnValue.SupplyCurrentLimit = 30;
-            returnValue.SupplyCurrentThreshold = 31;
+            returnValue.SupplyCurrentLimit = 35;
+            returnValue.SupplyCurrentThreshold = 36;
             returnValue.SupplyTimeThreshold = 0.04;
             returnValue.SupplyCurrentLimitEnable = true;
         }

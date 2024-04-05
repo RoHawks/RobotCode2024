@@ -673,7 +673,8 @@ public class Shooter{
 
         mLastCalculatedAutoAngleFromCamera = calculatedAngle;
 
-        double adamOffset = 0;//ATS:  Brian and I experimentally calculated -7 at 1345 between Tech Valley and NYC, but watching our match videos, I want to leave this at 0;
+        //This is the actual one we are using at NYC regional
+        double adamOffset = -4;//ATS:  Brian and I experimentally calculated -7 at 1345 between Tech Valley and NYC, but watching our match videos, I want to leave this at 0;
         calculatedAngle += adamOffset;
 
         SmartDashboard.putNumber("AutoLog: calculatedAngle", calculatedAngle);

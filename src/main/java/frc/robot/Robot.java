@@ -190,21 +190,21 @@ public class Robot extends TimedRobot
       
       //mShooter.logShooterInformation();
       //mStateMachine.log();
-      mExtendoArm.logExtendoArm();
+      //mExtendoArm.logExtendoArm();
       
       //mClimberArms.logArms();
       
       //mIntake.logIntake();
       //mShooter.logShooterInformation();
   
-      /*
+      
       mSwerveDrive.EnableDiagnostics();
       mSwerveDrive.EnableDiagnostics(WheelLabel.NE);
       mSwerveDrive.EnableDiagnostics(WheelLabel.SE);
       mSwerveDrive.EnableDiagnostics(WheelLabel.SW);
       mSwerveDrive.EnableDiagnostics(WheelLabel.NW);
       mSwerveDrive.LogDiagnostics();
-      */
+      
     }
     else
     {

@@ -552,6 +552,9 @@ public class SwerveDrive
 
     private double CalculateNudgeAccelerationMultiplier(long pStartedNudgingTimestamp, long pCurrentNudgingTimestamp)
     {
+        //return 1.0;
+
+        
         //Let's do this...
         //for the first 1/10th of a second, don't accelerate at al.
         //For the next 9/10th of a second, scale linearly from original speed to double speed
@@ -573,6 +576,7 @@ public class SwerveDrive
         }
         SmartDashboard.putNumber("NudgeMultiplier", returnValue);
         return returnValue;
+        
     }
 
     public void Nudge(SwerveNudgingDirection pDirection, double pNudgeSpeedMultiplier, double pAngleOffset)
